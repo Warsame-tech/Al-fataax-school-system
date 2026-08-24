@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import useAuth from '../hooks/useAuth';
 import reportsApi from '../api/reportsApi';
+import useDataSync from '../hooks/useDataSync';
 import LoadingState from '../components/common/LoadingState';
 import EmptyState from '../components/common/EmptyState';
 
@@ -126,24 +127,26 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(isCoordinator);
   const [myBuilding, setMyBuilding] = useState(null);
 
-  useEffect(() => {
+  const fetchMyBuilding = useCallback(async () => {
     if (!isCoordinator) return;
-    let active = true;
-    (async () => {
-      setLoading(true);
-      try {
-        const data = await reportsApi.myBuilding();
-        if (active) setMyBuilding(data);
-      } catch (err) {
-        toast.error(err.message || 'Failed to load reports.');
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
+    setLoading(true);
+    try {
+      const data = await reportsApi.myBuilding();
+      setMyBuilding(data);
+    } catch (err) {
+      toast.error(err.message || 'Failed to load reports.');
+    } finally {
+      setLoading(false);
+    }
   }, [isCoordinator]);
+
+  useEffect(() => {
+    fetchMyBuilding();
+  }, [fetchMyBuilding]);
+
+  // This summary is built from students and teachers grouped by educational
+  // stage, so any of those three changing anywhere invalidates it.
+  useDataSync(['students', 'teachers', 'stages'], fetchMyBuilding);
 
   return (
     <div>

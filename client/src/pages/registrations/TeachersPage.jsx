@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import teachersApi from '../../api/teachersApi';
 import buildingsApi from '../../api/buildingsApi';
+import useDataSync from '../../hooks/useDataSync';
 import useDebounce from '../../hooks/useDebounce';
 import DataTable from '../../components/common/DataTable';
 import SearchBar from '../../components/common/SearchBar';
@@ -50,12 +51,20 @@ export default function TeachersPage() {
     fetchTeachers();
   }, [fetchTeachers]);
 
-  useEffect(() => {
+  useDataSync(['teachers'], fetchTeachers);
+
+  const fetchBuildings = useCallback(() => {
     buildingsApi
       .list()
       .then((data) => setBuildings(data || []))
       .catch(() => setBuildings([]));
   }, []);
+
+  useEffect(() => {
+    fetchBuildings();
+  }, [fetchBuildings]);
+
+  useDataSync(['masjids'], fetchBuildings);
 
   const buildingName = (row) => row.Building?.name || row.buildingId;
 

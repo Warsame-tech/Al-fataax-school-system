@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import subjectsApi from '../../api/subjectsApi';
 import fansApi from '../../api/fansApi';
+import useDataSync from '../../hooks/useDataSync';
 import useDebounce from '../../hooks/useDebounce';
 import FanPivotTable from '../../components/common/FanPivotTable';
 import SearchBar from '../../components/common/SearchBar';
@@ -46,9 +47,17 @@ export default function SubjectsPage() {
     fetchSubjects();
   }, [fetchSubjects]);
 
-  useEffect(() => {
+  useDataSync(['books'], fetchSubjects);
+
+  const fetchFans = useCallback(() => {
     fansApi.list().then((data) => setFans(data || [])).catch(() => setFans([]));
   }, []);
+
+  useEffect(() => {
+    fetchFans();
+  }, [fetchFans]);
+
+  useDataSync(['fans'], fetchFans);
 
   const openAddModal = () => {
     setEditing(null);

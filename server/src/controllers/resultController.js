@@ -1,6 +1,7 @@
 const { sequelize, Result, Student, Subject, Building, Class } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 const { buildResultRow } = require('../utils/gradeCalculator');
+const { ownBuildingId } = require('../utils/scoping');
 
 // Fetches a student's Results joined with Subject and maps them into the
 // { subjectId, subjectName, marks } shape buildResultRow expects.
@@ -242,10 +243,8 @@ const search = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found. Please check the Student ID and try again.' });
   }
 
-  if (
-    (req.user.userType === 'teacher' || req.user.userType === 'coordinator') &&
-    student.buildingId !== req.user.buildingId
-  ) {
+  const own = ownBuildingId(req.user);
+  if (own != null && student.buildingId !== own) {
     return res.status(403).json({ success: false, message: "You are not authorized to view this student's results." });
   }
 

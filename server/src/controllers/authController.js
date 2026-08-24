@@ -60,7 +60,7 @@ const login = asyncHandler(async (req, res) => {
 });
 
 const logout = asyncHandler(async (req, res) => {
-  res.clearCookie(env.cookieName, { httpOnly: true, secure: env.nodeEnv === 'production', sameSite: 'lax' });
+  res.clearCookie(env.cookieName, getCookieOptions());
   return res.json({ success: true, message: 'Logged out' });
 });
 

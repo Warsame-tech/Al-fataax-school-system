@@ -4,6 +4,7 @@ import buildingsApi from '../../api/buildingsApi';
 import classesApi from '../../api/classesApi';
 import studentsApi from '../../api/studentsApi';
 import resultsApi from '../../api/resultsApi';
+import useDataSync from '../../hooks/useDataSync';
 import SelectField from '../../components/common/SelectField';
 import Button from '../../components/common/Button';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
@@ -40,6 +41,7 @@ export default function ResultsRegistrationPage() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [sheetLoading, setSheetLoading] = useState(false);
   const [rows, setRows] = useState([]);
+  const [dirty, setDirty] = useState(false);
   const [rowErrors, setRowErrors] = useState({});
   const [summary, setSummary] = useState(null); // { total, average, grade }
   const [saving, setSaving] = useState(false);
@@ -47,17 +49,22 @@ export default function ResultsRegistrationPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
+  const fetchFilters = useCallback(() => {
     buildingsApi.list().then((data) => setBuildings(data || [])).catch(() => setBuildings([]));
     // Stages are global (not masjid-scoped) — one unfiltered list for the dropdown.
     classesApi.list().then((data) => setClasses(data || [])).catch(() => setClasses([]));
   }, []);
 
   useEffect(() => {
-    setStudentId('');
-    setSelectedStudent(null);
-    setRows([]);
-    setSummary(null);
+    fetchFilters();
+  }, [fetchFilters]);
+
+  useDataSync(['masjids', 'stages'], fetchFilters);
+
+  // Refetches just the student dropdown for the current masjid/stage
+  // selection — kept separate from the reset effect below so a background
+  // 'students' change never wipes the sheet the user is currently editing.
+  const fetchStudentsForSelection = useCallback(() => {
     if (!buildingId || !classId) {
       setStudents([]);
       return;
@@ -67,6 +74,17 @@ export default function ResultsRegistrationPage() {
       .then((data) => setStudents(data || []))
       .catch(() => setStudents([]));
   }, [buildingId, classId]);
+
+  useEffect(() => {
+    setStudentId('');
+    setSelectedStudent(null);
+    setRows([]);
+    setSummary(null);
+    fetchStudentsForSelection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buildingId, classId]);
+
+  useDataSync(['students'], fetchStudentsForSelection);
 
   const loadSheet = useCallback(async (student) => {
     if (!student) {
@@ -82,6 +100,7 @@ export default function ResultsRegistrationPage() {
       ]);
       const books = classData?.Subjects || [];
       setRows(buildSheetRows(books, resultData?.subjects));
+      setDirty(false);
       setSummary(
         resultData
           ? { total: resultData.total, average: resultData.average, grade: resultData.grade }
@@ -96,15 +115,30 @@ export default function ResultsRegistrationPage() {
     }
   }, []);
 
+  // Keeps the currently open result sheet in sync with marks entered
+  // elsewhere (another admin/tab) or book assignment changes, without
+  // resetting the masjid/stage/student selection. Skipped while the user
+  // has unsaved edits in progress so a background change (e.g. another
+  // admin saving a different student in the same stage) can never wipe
+  // marks that haven't been saved yet.
+  const refreshSheet = useCallback(() => {
+    if (dirty) return;
+    loadSheet(selectedStudent);
+  }, [loadSheet, selectedStudent, dirty]);
+
+  useDataSync(['results', 'books'], refreshSheet);
+
   const handleSelectStudent = (id) => {
     setStudentId(id);
     setRowErrors({});
+    setDirty(false);
     const student = students.find((s) => s.id === id) || null;
     setSelectedStudent(student);
     loadSheet(student);
   };
 
   const handleMarksChange = (subjectId, value) => {
+    setDirty(true);
     setRows((prev) => prev.map((r) => (r.subjectId === subjectId ? { ...r, marks: value } : r)));
     setRowErrors((prev) => {
       if (!prev[subjectId]) return prev;
@@ -146,6 +180,7 @@ export default function ResultsRegistrationPage() {
       };
       const data = await resultsApi.bulkCreate(payload);
       toast.success('Results saved successfully.');
+      setDirty(false);
       setSummary({ total: data.total, average: data.average, grade: data.grade });
       // Re-sync rows with the server's saved values (fills in new result ids).
       const bySubjectId = new Map((data.subjects || []).map((s) => [s.subjectId, s]));

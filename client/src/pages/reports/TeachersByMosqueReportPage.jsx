@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import buildingsApi from '../../api/buildingsApi';
 import teachersApi from '../../api/teachersApi';
+import useDataSync from '../../hooks/useDataSync';
 import ReportDocument from '../../components/reports/ReportDocument';
 import ReportToolbar from '../../components/reports/ReportToolbar';
 import LoadingState from '../../components/common/LoadingState';
@@ -17,30 +18,37 @@ export default function TeachersByMosqueReportPage() {
   const [downloading, setDownloading] = useState(false);
   const docRef = useRef(null);
 
-  useEffect(() => {
+  const fetchBuildings = useCallback(() => {
     buildingsApi.list().then((data) => setBuildings(data || [])).catch(() => setBuildings([]));
   }, []);
 
   useEffect(() => {
+    fetchBuildings();
+  }, [fetchBuildings]);
+
+  useDataSync(['masjids'], fetchBuildings);
+
+  const fetchTeachers = useCallback(async () => {
     if (!buildingId) {
       setTeachers([]);
       return;
     }
-    let active = true;
     setLoading(true);
-    teachersApi
-      .list({ buildingId })
-      .then((data) => {
-        if (active) setTeachers(data || []);
-      })
-      .catch((err) => toast.error(err.message || 'Failed to load teachers.'))
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+    try {
+      const data = await teachersApi.list({ buildingId });
+      setTeachers(data || []);
+    } catch (err) {
+      toast.error(err.message || 'Failed to load teachers.');
+    } finally {
+      setLoading(false);
+    }
   }, [buildingId]);
+
+  useEffect(() => {
+    fetchTeachers();
+  }, [fetchTeachers]);
+
+  useDataSync(['teachers'], fetchTeachers);
 
   const handleDownload = async () => {
     setDownloading(true);

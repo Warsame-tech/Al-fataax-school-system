@@ -26,8 +26,10 @@ module.exports = function errorHandler(err, req, res, next) { // eslint-disable-
 
   console.error(err);
   const status = err.status || 500;
-  return res.status(status).json({
-    success: false,
-    message: err.message || 'Internal server error',
-  });
+  // Only trust err.message for explicit application errors (4xx, deliberately
+  // thrown with a status). Genuine unanticipated exceptions (500s) never
+  // reach the client with their original message — it could contain internal
+  // detail (a DB host/port, a file path) that has no business leaving the server.
+  const message = status < 500 && err.message ? err.message : 'Internal server error';
+  return res.status(status).json({ success: false, message });
 };

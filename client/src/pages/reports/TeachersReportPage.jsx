@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import teachersApi from '../../api/teachersApi';
+import useDataSync from '../../hooks/useDataSync';
 import ReportDocument from '../../components/reports/ReportDocument';
 import ReportToolbar from '../../components/reports/ReportToolbar';
 import LoadingState from '../../components/common/LoadingState';
@@ -14,21 +15,23 @@ export default function TeachersReportPage() {
   const [downloading, setDownloading] = useState(false);
   const docRef = useRef(null);
 
-  useEffect(() => {
-    let active = true;
-    teachersApi
-      .list()
-      .then((data) => {
-        if (active) setTeachers(data || []);
-      })
-      .catch((err) => toast.error(err.message || 'Failed to load teachers.'))
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+  const fetchTeachers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await teachersApi.list();
+      setTeachers(data || []);
+    } catch (err) {
+      toast.error(err.message || 'Failed to load teachers.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchTeachers();
+  }, [fetchTeachers]);
+
+  useDataSync(['teachers'], fetchTeachers);
 
   const handleDownload = async () => {
     setDownloading(true);

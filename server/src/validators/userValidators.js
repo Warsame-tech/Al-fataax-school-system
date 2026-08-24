@@ -10,7 +10,7 @@ const create = [
     .withMessage('username must be 3-100 characters')
     .matches(USERNAME_PATTERN)
     .withMessage('username may only contain letters, numbers, and underscores'),
-  body('password').isLength({ min: 6 }).withMessage('password must be at least 6 characters'),
+  body('password').isLength({ min: 8 }).withMessage('password must be at least 8 characters'),
   body('userType').isIn(USER_TYPES).withMessage(`userType must be one of: ${USER_TYPES.join(', ')}`),
   body('teacherId').optional({ nullable: true }).isInt(),
   body('studentId').optional({ nullable: true }).isInt(),
@@ -24,7 +24,7 @@ const update = [
     .withMessage('username must be 3-100 characters')
     .matches(USERNAME_PATTERN)
     .withMessage('username may only contain letters, numbers, and underscores'),
-  body('password').optional({ nullable: true }).isLength({ min: 6 }).withMessage('password must be at least 6 characters'),
+  body('password').optional({ nullable: true }).isLength({ min: 8 }).withMessage('password must be at least 8 characters'),
   body('userType').isIn(USER_TYPES).withMessage(`userType must be one of: ${USER_TYPES.join(', ')}`),
   body('teacherId').optional({ nullable: true }).isInt(),
   body('studentId').optional({ nullable: true }).isInt(),

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import fansApi from '../../api/fansApi';
+import useDataSync from '../../hooks/useDataSync';
 import useDebounce from '../../hooks/useDebounce';
 import DataTable from '../../components/common/DataTable';
 import SearchBar from '../../components/common/SearchBar';
@@ -41,6 +42,8 @@ export default function FansPage() {
   useEffect(() => {
     fetchFans();
   }, [fetchFans]);
+
+  useDataSync(['fans'], fetchFans);
 
   const openAddModal = () => {
     setEditing(null);

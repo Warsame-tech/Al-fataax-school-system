@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import buildingsApi from '../../api/buildingsApi';
 import classesApi from '../../api/classesApi';
 import studentsApi from '../../api/studentsApi';
 import resultsApi from '../../api/resultsApi';
+import useDataSync from '../../hooks/useDataSync';
 import ReportDocument from '../../components/reports/ReportDocument';
 import ReportToolbar from '../../components/reports/ReportToolbar';
 import { SingleStudentMarksheet } from '../../components/results/ResultsMarksheet';
@@ -33,15 +34,25 @@ export default function StudentReportPage() {
   const [downloading, setDownloading] = useState(false);
   const docRef = useRef(null);
 
-  useEffect(() => {
+  const fetchFilters = useCallback(() => {
     buildingsApi.list().then((data) => setBuildings(data || [])).catch(() => setBuildings([]));
     classesApi.list().then((data) => setClasses(data || [])).catch(() => setClasses([]));
   }, []);
 
   useEffect(() => {
-    setStudentId('');
-    setStudents([]);
-    if (!buildingId || !classId) return;
+    fetchFilters();
+  }, [fetchFilters]);
+
+  useDataSync(['masjids', 'stages'], fetchFilters);
+
+  // Refetches just the student dropdown for the current masjid/stage
+  // selection — kept separate from the reset effect below so a background
+  // 'students' change never wipes the report currently on screen.
+  const fetchStudentsForSelection = useCallback(() => {
+    if (!buildingId || !classId) {
+      setStudents([]);
+      return;
+    }
     studentsApi
       .list({ buildingId, classId })
       .then((data) => setStudents(data || []))
@@ -49,25 +60,37 @@ export default function StudentReportPage() {
   }, [buildingId, classId]);
 
   useEffect(() => {
-    setStudentInfo(null);
-    setStudentResults(null);
-    if (!studentId) return;
-    let active = true;
+    setStudentId('');
+    setStudents([]);
+    fetchStudentsForSelection();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buildingId, classId]);
+
+  useDataSync(['students'], fetchStudentsForSelection);
+
+  const fetchStudentDetail = useCallback(async () => {
+    if (!studentId) {
+      setStudentInfo(null);
+      setStudentResults(null);
+      return;
+    }
     setLoading(true);
-    Promise.all([studentsApi.get(studentId), resultsApi.byStudent(studentId)])
-      .then(([info, results]) => {
-        if (!active) return;
-        setStudentInfo(info);
-        setStudentResults(results);
-      })
-      .catch((err) => toast.error(err.message || 'Failed to load student report.'))
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+    try {
+      const [info, results] = await Promise.all([studentsApi.get(studentId), resultsApi.byStudent(studentId)]);
+      setStudentInfo(info);
+      setStudentResults(results);
+    } catch (err) {
+      toast.error(err.message || 'Failed to load student report.');
+    } finally {
+      setLoading(false);
+    }
   }, [studentId]);
+
+  useEffect(() => {
+    fetchStudentDetail();
+  }, [fetchStudentDetail]);
+
+  useDataSync(['students', 'results'], fetchStudentDetail);
 
   const handleDownload = async () => {
     setDownloading(true);

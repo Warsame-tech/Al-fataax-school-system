@@ -4,6 +4,7 @@ import useAuth from '../../hooks/useAuth';
 import buildingsApi from '../../api/buildingsApi';
 import classesApi from '../../api/classesApi';
 import resultsApi from '../../api/resultsApi';
+import useDataSync from '../../hooks/useDataSync';
 import Button from '../../components/common/Button';
 import LoadingState from '../../components/common/LoadingState';
 import EmptyState from '../../components/common/EmptyState';
@@ -107,31 +108,37 @@ export default function ViewResultsPage() {
   const [allSubjectColumns, setAllSubjectColumns] = useState([]);
   const [allLoading, setAllLoading] = useState(false);
 
-  useEffect(() => {
+  const fetchStudentResult = useCallback(async () => {
     if (!isStudent) return;
-    let active = true;
-    (async () => {
-      setStudentLoading(true);
-      try {
-        const data = await resultsApi.byStudent(user?.studentId || 'self');
-        if (active) setStudentResult(data);
-      } catch (err) {
-        toast.error(err.message || 'Failed to load your results.');
-      } finally {
-        if (active) setStudentLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
+    setStudentLoading(true);
+    try {
+      const data = await resultsApi.byStudent(user?.studentId || 'self');
+      setStudentResult(data);
+    } catch (err) {
+      toast.error(err.message || 'Failed to load your results.');
+    } finally {
+      setStudentLoading(false);
+    }
   }, [isStudent, user]);
 
-  // Admin: load masjids list up front for the browse and all-students modes.
   useEffect(() => {
+    fetchStudentResult();
+  }, [fetchStudentResult]);
+
+  useDataSync(['results'], fetchStudentResult);
+
+  // Admin: load masjids list up front for the browse and all-students modes.
+  const fetchAdminFilters = useCallback(() => {
     if (!isAdmin) return;
     buildingsApi.list().then((data) => setBuildings(data || [])).catch(() => setBuildings([]));
     classesApi.list().then((data) => setClasses(data || [])).catch(() => setClasses([]));
   }, [isAdmin]);
+
+  useEffect(() => {
+    fetchAdminFilters();
+  }, [fetchAdminFilters]);
+
+  useDataSync(['masjids', 'stages'], fetchAdminFilters);
 
   // Browse mode: load educational stages once the masjid is known.
   useEffect(() => {
@@ -165,6 +172,15 @@ export default function ViewResultsPage() {
     if (mode === 'browse') fetchClassResults();
   }, [mode, fetchClassResults]);
 
+  // Only refetches while the browse table is actually the active mode —
+  // mirrors the mode gate above so a background change doesn't fetch data
+  // for a tab the admin isn't even looking at.
+  const refreshClassResultsIfActive = useCallback(() => {
+    if (mode === 'browse') fetchClassResults();
+  }, [mode, fetchClassResults]);
+
+  useDataSync(['results', 'students', 'books'], refreshClassResultsIfActive);
+
   // All-students mode: loads immediately, optionally narrowed by the same
   // masjid/stage selects (both optional here — unlike browse mode).
   const fetchAllResults = useCallback(async () => {
@@ -188,6 +204,12 @@ export default function ViewResultsPage() {
   useEffect(() => {
     if (mode === 'all') fetchAllResults();
   }, [mode, fetchAllResults]);
+
+  const refreshAllResultsIfActive = useCallback(() => {
+    if (mode === 'all') fetchAllResults();
+  }, [mode, fetchAllResults]);
+
+  useDataSync(['results', 'students', 'books'], refreshAllResultsIfActive);
 
   const resetToMasjid = () => {
     setBuildingId('');

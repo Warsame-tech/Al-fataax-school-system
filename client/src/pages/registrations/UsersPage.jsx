@@ -4,6 +4,7 @@ import usersApi from '../../api/usersApi';
 import teachersApi from '../../api/teachersApi';
 import studentsApi from '../../api/studentsApi';
 import coordinatorsApi from '../../api/coordinatorsApi';
+import useDataSync from '../../hooks/useDataSync';
 import useDebounce from '../../hooks/useDebounce';
 import { USER_TYPES, USERNAME_PATTERN } from '../../utils/constants';
 import DataTable from '../../components/common/DataTable';
@@ -67,11 +68,19 @@ export default function UsersPage() {
     fetchUsers();
   }, [fetchUsers]);
 
-  useEffect(() => {
+  useDataSync(['users'], fetchUsers);
+
+  const fetchLinkableRecords = useCallback(() => {
     teachersApi.list().then((data) => setTeachers(data || [])).catch(() => setTeachers([]));
     studentsApi.list().then((data) => setStudents(data || [])).catch(() => setStudents([]));
     coordinatorsApi.list().then((data) => setCoordinators(data || [])).catch(() => setCoordinators([]));
   }, []);
+
+  useEffect(() => {
+    fetchLinkableRecords();
+  }, [fetchLinkableRecords]);
+
+  useDataSync(['teachers', 'students', 'coordinators'], fetchLinkableRecords);
 
   const openAddModal = () => {
     setEditing(null);
@@ -110,8 +119,8 @@ export default function UsersPage() {
     }
     if (!editing && !form.password.trim()) {
       errors.password = 'Password is required.';
-    } else if (form.password.trim() && form.password.trim().length < 6) {
-      errors.password = 'Password must be at least 6 characters.';
+    } else if (form.password.trim() && form.password.trim().length < 8) {
+      errors.password = 'Password must be at least 8 characters.';
     }
     if (!form.userType) errors.userType = 'User type is required.';
     if (form.userType === 'teacher' && !form.teacherId) errors.teacherId = 'Teacher is required.';

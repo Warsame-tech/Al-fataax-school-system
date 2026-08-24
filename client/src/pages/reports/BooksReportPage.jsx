@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import subjectsApi from '../../api/subjectsApi';
+import useDataSync from '../../hooks/useDataSync';
 import ReportDocument from '../../components/reports/ReportDocument';
 import ReportToolbar from '../../components/reports/ReportToolbar';
 import LoadingState from '../../components/common/LoadingState';
@@ -14,21 +15,25 @@ export default function BooksReportPage() {
   const [downloading, setDownloading] = useState(false);
   const docRef = useRef(null);
 
-  useEffect(() => {
-    let active = true;
-    subjectsApi
-      .list()
-      .then((data) => {
-        if (active) setBooks(data || []);
-      })
-      .catch((err) => toast.error(err.message || 'Failed to load religious books.'))
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
+  const fetchBooks = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await subjectsApi.list();
+      setBooks(data || []);
+    } catch (err) {
+      toast.error(err.message || 'Failed to load religious books.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchBooks();
+  }, [fetchBooks]);
+
+  // Books are grouped/labelled by fan in this report, so a fan rename
+  // needs the same refresh as a book create/update/delete.
+  useDataSync(['books', 'fans'], fetchBooks);
 
   const handleDownload = async () => {
     setDownloading(true);

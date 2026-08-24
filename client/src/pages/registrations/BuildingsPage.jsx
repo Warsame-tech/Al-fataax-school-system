@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import buildingsApi from '../../api/buildingsApi';
+import useDataSync from '../../hooks/useDataSync';
 import useDebounce from '../../hooks/useDebounce';
 import DataTable from '../../components/common/DataTable';
 import SearchBar from '../../components/common/SearchBar';
@@ -41,6 +42,8 @@ export default function BuildingsPage() {
   useEffect(() => {
     fetchBuildings();
   }, [fetchBuildings]);
+
+  useDataSync(['masjids'], fetchBuildings);
 
   const openAddModal = () => {
     setEditing(null);

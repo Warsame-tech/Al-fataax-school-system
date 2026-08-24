@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import dashboardApi from '../api/dashboardApi';
 import StatCard from '../components/common/StatCard';
 import LoadingState from '../components/common/LoadingState';
+import useDataSync from '../hooks/useDataSync';
 
 const ICON_PROPS = { className: 'h-6 w-6', fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' };
 const PATH_PROPS = { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: 1.5 };
@@ -72,24 +73,29 @@ const CARD_DEFS = [
 export default function DashboardPage() {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const hasLoadedOnce = useRef(false);
+
+  const fetchSummary = useCallback(async () => {
+    if (!hasLoadedOnce.current) setLoading(true);
+    try {
+      const data = await dashboardApi.summary();
+      setSummary(data);
+    } catch (err) {
+      toast.error(err.message || 'Failed to load dashboard summary.');
+    } finally {
+      hasLoadedOnce.current = true;
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let active = true;
-    (async () => {
-      setLoading(true);
-      try {
-        const data = await dashboardApi.summary();
-        if (active) setSummary(data);
-      } catch (err) {
-        toast.error(err.message || 'Failed to load dashboard summary.');
-      } finally {
-        if (active) setLoading(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
+    fetchSummary();
+  }, [fetchSummary]);
+
+  // Dashboard totals touch every resource in the system, so any successful
+  // create/update/delete anywhere (even on a page opened in another tab)
+  // silently refreshes the numbers here — no manual browser refresh needed.
+  useDataSync('*', fetchSummary);
 
   return (
     <div>

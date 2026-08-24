@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import buildingsApi from '../../api/buildingsApi';
 import classesApi from '../../api/classesApi';
 import resultsApi from '../../api/resultsApi';
+import useDataSync from '../../hooks/useDataSync';
 import { MultiStudentMarksheet } from '../../components/results/ResultsMarksheet';
 import ReportToolbar from '../../components/reports/ReportToolbar';
 import LoadingState from '../../components/common/LoadingState';
@@ -21,10 +22,16 @@ export default function ResultsByStageReportPage() {
   const [downloading, setDownloading] = useState(false);
   const docRef = useRef(null);
 
-  useEffect(() => {
+  const fetchFilters = useCallback(() => {
     buildingsApi.list().then((data) => setBuildings(data || [])).catch(() => setBuildings([]));
     classesApi.list().then((data) => setClasses(data || [])).catch(() => setClasses([]));
   }, []);
+
+  useEffect(() => {
+    fetchFilters();
+  }, [fetchFilters]);
+
+  useDataSync(['masjids', 'stages'], fetchFilters);
 
   const fetchResults = useCallback(async () => {
     if (!buildingId || !classId) return;
@@ -45,6 +52,8 @@ export default function ResultsByStageReportPage() {
   useEffect(() => {
     fetchResults();
   }, [fetchResults]);
+
+  useDataSync(['results', 'students', 'stages'], fetchResults);
 
   const handleDownload = async () => {
     setDownloading(true);

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import classesApi from '../../api/classesApi';
 import subjectsApi from '../../api/subjectsApi';
+import useDataSync from '../../hooks/useDataSync';
 import useDebounce from '../../hooks/useDebounce';
 import FanPivotTable from '../../components/common/FanPivotTable';
 import SearchBar from '../../components/common/SearchBar';
@@ -47,6 +48,11 @@ export default function ClassesPage() {
   useEffect(() => {
     fetchClasses();
   }, [fetchClasses]);
+
+  // Classes carry their assigned religious books (Subjects) inline, so a
+  // book rename/create/delete elsewhere also needs a refetch here, not just
+  // a stage change.
+  useDataSync(['stages', 'books'], fetchClasses);
 
   const loadAvailableBooks = async (excludeStageId) => {
     setAvailableBooksLoading(true);

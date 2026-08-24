@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import buildingsApi from '../../api/buildingsApi';
 import classesApi from '../../api/classesApi';
 import studentsApi from '../../api/studentsApi';
+import useDataSync from '../../hooks/useDataSync';
 import ReportDocument from '../../components/reports/ReportDocument';
 import ReportToolbar from '../../components/reports/ReportToolbar';
 import LoadingState from '../../components/common/LoadingState';
@@ -21,10 +22,16 @@ export default function StudentsReportPage() {
   const [downloading, setDownloading] = useState(false);
   const docRef = useRef(null);
 
-  useEffect(() => {
+  const fetchFilters = useCallback(() => {
     buildingsApi.list().then((data) => setBuildings(data || [])).catch(() => setBuildings([]));
     classesApi.list().then((data) => setClasses(data || [])).catch(() => setClasses([]));
   }, []);
+
+  useEffect(() => {
+    fetchFilters();
+  }, [fetchFilters]);
+
+  useDataSync(['masjids', 'stages'], fetchFilters);
 
   const fetchStudents = useCallback(async () => {
     setLoading(true);
@@ -42,6 +49,10 @@ export default function StudentsReportPage() {
   useEffect(() => {
     fetchStudents();
   }, [fetchStudents]);
+
+  // 'masjids'/'stages' too — the student rows carry joined Building/Class
+  // names that would otherwise go stale after a rename elsewhere.
+  useDataSync(['students', 'masjids', 'stages'], fetchStudents);
 
   const handleDownload = async () => {
     setDownloading(true);

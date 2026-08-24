@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import studentsApi from '../../api/studentsApi';
 import buildingsApi from '../../api/buildingsApi';
 import classesApi from '../../api/classesApi';
+import useDataSync from '../../hooks/useDataSync';
 import useDebounce from '../../hooks/useDebounce';
 import useAuth from '../../hooks/useAuth';
 import { GENDERS } from '../../utils/constants';
@@ -60,7 +61,9 @@ export default function StudentsPage() {
     fetchStudents();
   }, [fetchStudents]);
 
-  useEffect(() => {
+  useDataSync(['students'], fetchStudents);
+
+  const fetchDropdownData = useCallback(() => {
     // Masjid list is an admin-only endpoint — a coordinator never needs it
     // since their masjid is implicit/locked server-side.
     if (!isCoordinator) {
@@ -68,6 +71,12 @@ export default function StudentsPage() {
     }
     classesApi.list().then((data) => setClasses(data || [])).catch(() => setClasses([]));
   }, [isCoordinator]);
+
+  useEffect(() => {
+    fetchDropdownData();
+  }, [fetchDropdownData]);
+
+  useDataSync(['masjids', 'stages'], fetchDropdownData);
 
   const buildingName = (row) => row.Building?.name || row.buildingId;
   const className = (row) => row.Class?.name_ar || row.classId;

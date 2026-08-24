@@ -8,4 +8,15 @@ const loginLimiter = rateLimit({
   message: { success: false, message: 'Too many login attempts. Please try again later.' },
 });
 
-module.exports = { loginLimiter };
+// Defense-in-depth on account writes (create user / change password). These
+// are already admin-only, but a compromised or scripted admin session
+// shouldn't be able to hammer account creation/password-reset unthrottled.
+const accountWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many account changes. Please try again later.' },
+});
+
+module.exports = { loginLimiter, accountWriteLimiter };

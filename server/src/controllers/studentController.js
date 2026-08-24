@@ -1,15 +1,19 @@
 const { Op } = require('sequelize');
 const { Student, Building, Class } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
+const { ownBuildingId } = require('../utils/scoping');
 
 const include = [
   { model: Building, attributes: ['id', 'name'] },
   { model: Class, attributes: ['id', 'name_ar'] },
 ];
 
-// Coordinators may only ever act within their own masjid. Admins are unrestricted.
+// Coordinators may only ever act within their own masjid (route-level
+// authorizeRoles already excludes teacher/student from this controller
+// entirely, so in practice this only ever returns non-null for coordinator).
+// Admins are unrestricted.
 function coordinatorBuildingId(req) {
-  return req.user.userType === 'coordinator' ? req.user.buildingId : null;
+  return ownBuildingId(req.user);
 }
 
 const list = asyncHandler(async (req, res) => {
