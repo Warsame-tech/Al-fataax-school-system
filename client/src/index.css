@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-red: #9E1B32;
+  --color-brand-red-dark: #7A1526;
+  --color-brand-green: #1E5B3A;
+  --color-brand-green-dark: #154028;
+  --color-brand-gold: #D4A72C;
+  --color-brand-gold-light: #E8C766;
+  --color-neutral-offwhite: #F7F5F0;
+  --color-status-error: #DC2626;
+  --color-status-success: #16A34A;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, sans-serif;
+  background-color: var(--color-neutral-offwhite);
+  color: #1f2937;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.dark body {
+  background-color: #111827;
+  color: #f3f4f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Thin, unobtrusive scrollbars for horizontally-scrolling tables */
+.scroll-thin::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background-color: #d1c9b8;
+  border-radius: 9999px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+/* Report printing: only the report document (banner + title bar + table)
+   should survive into print output — chrome (sidebar, topbar, watermark)
+   and interactive controls (filters, buttons) are all hidden. */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  /* Tables that scroll horizontally on screen must fit/flow naturally on
+     the printed page instead of being clipped by overflow-x-auto. */
+  .report-table-wrap,
+  .scroll-thin {
+    overflow: visible !important;
+  }
+}
