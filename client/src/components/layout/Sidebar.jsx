@@ -116,7 +116,7 @@ function NavItem({ to, icon, children, onNavigate, indented }) {
 // a smooth CSS-grid height animation for its children — no layout jump, no
 // JS height measurement. Shows a subtle active tint if a descendant route is
 // current, even while collapsed, so the active state is never hidden.
-function SidebarGroup({ icon, label, defaultExpanded = true, hasActiveChild, children }) {
+function SidebarGroup({ icon, label, defaultExpanded = false, hasActiveChild, children }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   return (
@@ -175,7 +175,7 @@ export default function Sidebar({ onNavigate }) {
         )}
 
         {(isAdmin || isCoordinator) && (
-          <SidebarGroup icon={NAV_ICONS.registrations} label="Registrations" hasActiveChild={inRegistrations}>
+          <SidebarGroup icon={NAV_ICONS.registrations} label="Registrations" hasActiveChild={inRegistrations} defaultExpanded={inRegistrations}>
             {isAdmin && (
               <>
                 <NavItem to="/registrations/buildings" icon={NAV_ICONS.building} onNavigate={onNavigate} indented>
@@ -211,7 +211,7 @@ export default function Sidebar({ onNavigate }) {
           </SidebarGroup>
         )}
 
-        <SidebarGroup icon={NAV_ICONS.results} label="Results" hasActiveChild={inResults}>
+        <SidebarGroup icon={NAV_ICONS.results} label="Results" hasActiveChild={inResults} defaultExpanded={inResults}>
           {isAdmin && (
             <NavItem to="/results/register" icon={NAV_ICONS.resultsReg} onNavigate={onNavigate} indented>
               Results Registration
@@ -223,7 +223,7 @@ export default function Sidebar({ onNavigate }) {
         </SidebarGroup>
 
         {isAdmin && (
-          <SidebarGroup icon={NAV_ICONS.reports} label="Reports" hasActiveChild={inReports}>
+          <SidebarGroup icon={NAV_ICONS.reports} label="Reports" hasActiveChild={inReports} defaultExpanded={inReports}>
             <NavItem to="/reports/teachers" icon={NAV_ICONS.teacher} onNavigate={onNavigate} indented>
               All Teachers Report
             </NavItem>
