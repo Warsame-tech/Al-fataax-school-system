@@ -1,14 +1,9 @@
 import { createContext, useCallback, useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
 import authApi from '../api/authApi';
-import useIdleTimer from '../hooks/useIdleTimer';
+import useSessionTimeout from '../hooks/useSessionTimeout';
+import { notifyLogout, SESSION_EXPIRED_EVENT } from '../utils/sessionSync';
 
 export const AuthContext = createContext(null);
-
-// Matches the backend's sliding-session window (server/.env JWT_EXPIRES_IN)
-// so the user is signed out here at roughly the same time their session
-// would expire server-side anyway.
-const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -40,20 +35,72 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
+  // Explicit, user-initiated logout (e.g. the Topbar button). Also
+  // broadcasts to other tabs, since one tab logging out should log out the
+  // whole session everywhere, not just itself.
   const logout = useCallback(async () => {
     try {
       await authApi.logout();
     } finally {
       setUser(null);
+      notifyLogout();
     }
   }, []);
 
-  const handleIdle = useCallback(() => {
-    logout();
-    toast('You have been logged out due to inactivity.');
-  }, [logout]);
+  // 60 seconds of no real activity (this tab or any other open tab — see
+  // useSessionTimeout) elapsed. Explicitly clears the server-side cookie
+  // immediately rather than waiting for the token to passively expire, then
+  // broadcasts so every other tab follows straight away. No warning,
+  // countdown, or confirmation — this fires the logout directly.
+  const handleIdleTimeout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // The token may already be expired by the time this fires (a request
+      // in flight can lose a close race with the 60s mark) — that still
+      // means the session is dead either way, so there's nothing to do.
+    } finally {
+      setUser(null);
+      notifyLogout();
+    }
+  }, []);
 
-  useIdleTimer(handleIdle, IDLE_TIMEOUT_MS, !!user);
+  // A 401 came back on THIS tab (see axiosClient.js) — the session is
+  // already gone server-side (the actual enforcement), so just reflect that
+  // locally and tell other tabs. Only acts if we currently think we're
+  // logged in, so the normal pre-login 401s (initial /auth/me check, a
+  // failed login attempt) are no-ops.
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setUser((current) => {
+        if (!current) return current;
+        notifyLogout();
+        return null;
+      });
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+  }, []);
+
+  // Another tab logged out — follow immediately, no need to call the API
+  // again (the cookie is already cleared) or broadcast further.
+  const handleRemoteLogout = useCallback(() => {
+    setUser(null);
+  }, []);
+
+  const heartbeat = useCallback(() => {
+    authApi.heartbeat().catch(() => {
+      // Best-effort: if this fails the session is likely already gone, and
+      // the next idle-check / 401 will catch it.
+    });
+  }, []);
+
+  useSessionTimeout({
+    enabled: !!user,
+    onIdleTimeout: handleIdleTimeout,
+    onRemoteLogout: handleRemoteLogout,
+    heartbeat,
+  });
 
   const value = { user, loading, login, logout, refetchMe };
 

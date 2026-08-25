@@ -72,4 +72,16 @@ const me = asyncHandler(async (req, res) => {
   return res.json({ success: true, data: { ...toPublicUser(user), buildingId: req.user.buildingId } });
 });
 
-module.exports = { login, logout, me };
+// The ONLY endpoint that extends a session. The frontend calls this in
+// response to real user activity (throttled well inside JWT_EXPIRES_IN),
+// never from background/auto-refresh requests — see authenticate.js for why
+// that split matters. Requires an already-valid, non-expired token, so it
+// cannot itself be used to resurrect a session that has already timed out.
+const heartbeat = asyncHandler(async (req, res) => {
+  const { iat, exp, ...claims } = req.user; // eslint-disable-line no-unused-vars
+  const refreshed = signToken(claims);
+  res.cookie(env.cookieName, refreshed, getCookieOptions());
+  return res.json({ success: true });
+});
+
+module.exports = { login, logout, me, heartbeat };

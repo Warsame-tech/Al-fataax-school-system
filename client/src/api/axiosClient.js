@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { emitDataChanged, resourceFromUrl, isMutatingMethod } from '../utils/dataSync';
+import { emitSessionExpired } from '../utils/sessionSync';
 
 const baseConfig = {
   baseURL: '/api',
@@ -7,6 +8,15 @@ const baseConfig = {
 };
 
 function normalizeError(error) {
+  // A 401 means the session is gone server-side — whether that's from the
+  // idle timeout finally being enforced, or any other reason. AuthContext
+  // listens for this and only acts if it currently thinks a user is logged
+  // in, so this is a no-op for the normal "not logged in yet" 401s (initial
+  // /auth/me check, a failed login attempt).
+  if (error.response?.status === 401) {
+    emitSessionExpired();
+  }
+
   const payload = error.response?.data;
   const fieldErrors = payload?.errors;
   let message = payload?.message || error.message || 'Something went wrong';

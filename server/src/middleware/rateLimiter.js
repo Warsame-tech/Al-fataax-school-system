@@ -19,4 +19,15 @@ const accountWriteLimiter = rateLimit({
   message: { success: false, message: 'Too many account changes. Please try again later.' },
 });
 
-module.exports = { loginLimiter, accountWriteLimiter };
+// The frontend pings this at most once every ~15s while a user is
+// continuously active (see client/src/config/session.js), so a generous
+// per-minute budget still comfortably bounds a tampered/scripted client.
+const heartbeatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many session requests. Please try again later.' },
+});
+
+module.exports = { loginLimiter, accountWriteLimiter, heartbeatLimiter };

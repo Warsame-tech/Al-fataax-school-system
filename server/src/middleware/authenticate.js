@@ -1,13 +1,17 @@
-const { verifyToken, signToken } = require('../utils/jwt');
-const { getCookieOptions } = require('../utils/cookieOptions');
+const { verifyToken } = require('../utils/jwt');
 const env = require('../config/env');
 
-// Sliding session: every authenticated request re-issues the token with a
-// fresh expiry, so the cookie effectively expires N minutes after the LAST
-// request rather than at a fixed time from login. A user actively using the
-// system never gets logged out; one who walks away gets logged out (server-
-// side, not just via the frontend idle timer) once JWT_EXPIRES_IN elapses
-// with no requests.
+// Verifies the session token and attaches req.user — nothing more. This
+// deliberately does NOT extend/re-sign the token on every request: if it
+// did, background/auto-refresh requests (which fire on their own timer, not
+// because of real user activity) would silently keep the session alive
+// forever, defeating the inactivity timeout. The only place a session gets
+// extended is POST /api/auth/heartbeat (see authController.heartbeat),
+// which the frontend calls solely in response to genuine mouse/keyboard/
+// touch/click activity. That makes JWT_EXPIRES_IN (server/.env) the real,
+// server-enforced idle timeout: once that long passes with no heartbeat,
+// the token's own `exp` claim fails verification here regardless of what
+// the client sends or how its JS has been tampered with.
 module.exports = function authenticate(req, res, next) {
   const token = req.cookies ? req.cookies[env.cookieName] : undefined;
 
@@ -16,13 +20,7 @@ module.exports = function authenticate(req, res, next) {
   }
 
   try {
-    const payload = verifyToken(token);
-    req.user = payload;
-
-    const { iat, exp, ...claims } = payload; // eslint-disable-line no-unused-vars
-    const refreshed = signToken(claims);
-    res.cookie(env.cookieName, refreshed, getCookieOptions());
-
+    req.user = verifyToken(token);
     return next();
   } catch (err) {
     return res.status(401).json({ success: false, message: 'Invalid or expired session' });
