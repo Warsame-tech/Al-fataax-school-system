@@ -1,6 +1,6 @@
 const { body } = require('express-validator');
 
-const USER_TYPES = ['admin', 'teacher', 'student', 'coordinator'];
+const USER_TYPES = ['admin', 'teacher', 'student', 'coordinator', 'gudoomiye'];
 const USERNAME_PATTERN = /^[A-Za-z0-9_]+$/;
 
 const create = [

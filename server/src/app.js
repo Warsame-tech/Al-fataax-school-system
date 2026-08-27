@@ -17,6 +17,7 @@ const userRoutes = require('./routes/userRoutes');
 const resultRoutes = require('./routes/resultRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const gudoomiyeReportRoutes = require('./routes/gudoomiyeReportRoutes');
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/results', resultRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/gudoomiye/reports', gudoomiyeReportRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Not found' });

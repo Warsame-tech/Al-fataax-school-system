@@ -5,6 +5,6 @@ const authorizeRoles = require('../middleware/authorizeRoles');
 
 const router = express.Router();
 
-router.get('/summary', authenticate, authorizeRoles('admin'), dashboardController.summary);
+router.get('/summary', authenticate, authorizeRoles('admin', 'gudoomiye'), dashboardController.summary);
 
 module.exports = router;

@@ -76,6 +76,15 @@ async function validateLinkage({ userType, teacherId, studentId, coordinatorId }
     return null;
   }
 
+  if (userType === 'gudoomiye') {
+    // Report-only role, same shape as admin: no directory-entry model, so
+    // no xId FK is ever linked.
+    if (teacherId || studentId || coordinatorId) {
+      return 'GUDOOMIYE users must not have a teacherId, studentId, or coordinatorId.';
+    }
+    return null;
+  }
+
   return 'Invalid userType.';
 }
 
