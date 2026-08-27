@@ -87,6 +87,7 @@ export default function ViewResultsPage() {
   // Student flow (unchanged)
   const [studentResult, setStudentResult] = useState(null);
   const [studentLoading, setStudentLoading] = useState(isStudent);
+  const [studentError, setStudentError] = useState(null);
 
   // Admin mode switcher
   const [mode, setMode] = useState('browse');
@@ -111,11 +112,19 @@ export default function ViewResultsPage() {
   const fetchStudentResult = useCallback(async () => {
     if (!isStudent) return;
     setStudentLoading(true);
+    setStudentError(null);
     try {
       const data = await resultsApi.byStudent(user?.studentId || 'self');
       setStudentResult(data);
     } catch (err) {
-      toast.error(err.message || 'Failed to load your results.');
+      // A 403 here means the masjid's results-visibility toggle is off —
+      // show that message directly rather than a generic failure toast, so
+      // the student understands why nothing is showing.
+      if (err.status === 403) {
+        setStudentError(err.message);
+      } else {
+        toast.error(err.message || 'Failed to load your results.');
+      }
     } finally {
       setStudentLoading(false);
     }
@@ -223,6 +232,8 @@ export default function ViewResultsPage() {
       <div>
         {studentLoading ? (
           <LoadingState label="Loading your results..." />
+        ) : studentError ? (
+          <EmptyState message={studentError} />
         ) : !studentResult || !studentResult.subjects || studentResult.subjects.length === 0 ? (
           <EmptyState message="No results have been entered for you yet." />
         ) : (

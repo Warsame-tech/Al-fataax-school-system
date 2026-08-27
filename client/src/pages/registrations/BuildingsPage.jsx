@@ -9,6 +9,7 @@ import Modal from '../../components/common/Modal';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import FormField from '../../components/common/FormField';
 import Button from '../../components/common/Button';
+import ToggleSwitch from '../../components/common/ToggleSwitch';
 
 const EMPTY_FORM = { name: '' };
 
@@ -26,6 +27,8 @@ export default function BuildingsPage() {
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [togglingId, setTogglingId] = useState(null);
 
   const fetchBuildings = useCallback(async () => {
     setLoading(true);
@@ -102,6 +105,23 @@ export default function BuildingsPage() {
     }
   };
 
+  const handleToggleVisibility = async (row, next) => {
+    setTogglingId(row.id);
+    try {
+      await buildingsApi.update(row.id, { name: row.name, resultsVisible: next });
+      toast.success(
+        next
+          ? `Results turned ON for "${row.name}". Its students can now view their results.`
+          : `Results turned OFF for "${row.name}". Its students can no longer view their results.`,
+      );
+      fetchBuildings();
+    } catch (err) {
+      toast.error(err.message || 'Failed to update results visibility.');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
   const columns = [
     {
       key: 'name',
@@ -110,6 +130,27 @@ export default function BuildingsPage() {
         <span dir="rtl" className="block text-right">
           {row.name}
         </span>
+      ),
+    },
+    {
+      key: 'resultsVisible',
+      header: 'Results Visibility',
+      render: (row) => (
+        <div className="flex items-center gap-3">
+          <ToggleSwitch
+            checked={row.resultsVisible}
+            disabled={togglingId === row.id}
+            label={`Toggle results visibility for ${row.name}`}
+            onChange={(next) => handleToggleVisibility(row, next)}
+          />
+          <span
+            className={`text-sm font-medium ${
+              row.resultsVisible ? 'text-brand-green dark:text-green-400' : 'text-gray-500 dark:text-gray-400'
+            }`}
+          >
+            {row.resultsVisible ? 'ON' : 'OFF'}
+          </span>
+        </div>
       ),
     },
     {

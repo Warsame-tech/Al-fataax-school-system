@@ -11,6 +11,11 @@ const Building = sequelize.define('Building', {
     type: DataTypes.STRING(150),
     allowNull: false,
   },
+  resultsVisible: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+  },
 }, {
   tableName: 'Masjids',
 });
