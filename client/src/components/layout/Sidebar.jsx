@@ -201,7 +201,7 @@ export default function Sidebar({ onNavigate }) {
                   Teacher Registration
                 </NavItem>
                 <NavItem to="/registrations/coordinators" icon={NAV_ICONS.coordinator} onNavigate={onNavigate} indented>
-                  Coordinator Registration
+                  GUDOOMIYE KUXIGEEN Registration
                 </NavItem>
                 <NavItem to="/registrations/users" icon={NAV_ICONS.user} onNavigate={onNavigate} indented>
                   User Registration

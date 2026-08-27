@@ -64,7 +64,7 @@ const CARD_DEFS = [
   { key: 'totalFans', label: 'Total Fans' },
   { key: 'totalStudents', label: 'Total Students' },
   { key: 'totalTeachers', label: 'Total Teachers' },
-  { key: 'totalCoordinators', label: 'Total Coordinators' },
+  { key: 'totalCoordinators', label: 'Total GUDOOMIYE KUXIGEEN' },
   { key: 'totalClasses', label: 'Total Educational Stages' },
   { key: 'totalSubjects', label: 'Total Religious Books' },
   { key: 'totalResults', label: 'Total Results' },

@@ -1,5 +1,6 @@
 import useTheme from '../../hooks/useTheme';
 import useAuth from '../../hooks/useAuth';
+import { USER_TYPE_LABELS } from '../../utils/constants';
 
 export default function Topbar({ onMenuClick, title }) {
   const { theme, toggleTheme } = useTheme();
@@ -63,7 +64,7 @@ export default function Topbar({ onMenuClick, title }) {
         {user && (
           <p className="text-xs text-gray-500 dark:text-gray-400">
             <span className="font-medium text-gray-700 dark:text-gray-200">{user.name}</span>
-            <span className="capitalize"> · {user.userType}</span>
+            <span> · {USER_TYPE_LABELS[user.userType] || user.userType}</span>
           </p>
         )}
       </div>

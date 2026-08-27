@@ -6,7 +6,7 @@ import studentsApi from '../../api/studentsApi';
 import coordinatorsApi from '../../api/coordinatorsApi';
 import useDataSync from '../../hooks/useDataSync';
 import useDebounce from '../../hooks/useDebounce';
-import { USER_TYPES, USERNAME_PATTERN } from '../../utils/constants';
+import { USER_TYPES, USERNAME_PATTERN, USER_TYPE_LABELS } from '../../utils/constants';
 import DataTable from '../../components/common/DataTable';
 import SearchBar from '../../components/common/SearchBar';
 import FilterSelect from '../../components/common/FilterSelect';
@@ -23,7 +23,7 @@ const USER_TYPE_FORM_OPTIONS = [
   { value: 'student', label: 'Student' },
   { value: 'teacher', label: 'Teacher' },
   { value: 'admin', label: 'Admin' },
-  { value: 'coordinator', label: 'Coordinator' },
+  { value: 'coordinator', label: 'GUDOOMIYE KUXIGEEN' },
 ];
 
 const USER_TYPE_COLORS = { admin: 'red', teacher: 'green', student: 'gold', coordinator: 'blue' };
@@ -125,7 +125,7 @@ export default function UsersPage() {
     if (!form.userType) errors.userType = 'User type is required.';
     if (form.userType === 'teacher' && !form.teacherId) errors.teacherId = 'Teacher is required.';
     if (form.userType === 'student' && !form.studentId) errors.studentId = 'Student is required.';
-    if (form.userType === 'coordinator' && !form.coordinatorId) errors.coordinatorId = 'Coordinator is required.';
+    if (form.userType === 'coordinator' && !form.coordinatorId) errors.coordinatorId = 'GUDOOMIYE KUXIGEEN is required.';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -181,8 +181,8 @@ export default function UsersPage() {
       key: 'userType',
       header: 'User Type',
       render: (row) => (
-        <Badge color={USER_TYPE_COLORS[row.userType] || 'neutral'} className="capitalize">
-          {row.userType}
+        <Badge color={USER_TYPE_COLORS[row.userType] || 'neutral'}>
+          {USER_TYPE_LABELS[row.userType] || row.userType}
         </Badge>
       ),
     },
@@ -212,7 +212,7 @@ export default function UsersPage() {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-brand-red dark:text-red-400">User Registration</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Manage login accounts for admins, teachers, students and coordinators.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Manage login accounts for admins, teachers, students and GUDOOMIYE KUXIGEEN.</p>
         </div>
         <Button onClick={openAddModal}>+ Add User</Button>
       </div>
@@ -268,7 +268,7 @@ export default function UsersPage() {
           )}
           {form.userType === 'coordinator' && (
             <SelectField
-              label="Coordinator"
+              label="GUDOOMIYE KUXIGEEN"
               name="coordinatorId"
               value={form.coordinatorId}
               onChange={(e) => setForm((f) => ({ ...f, coordinatorId: e.target.value ? Number(e.target.value) : '' }))}

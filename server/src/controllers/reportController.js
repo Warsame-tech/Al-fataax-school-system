@@ -93,7 +93,7 @@ const byBuildingReport = asyncHandler(async (req, res) => {
 const myBuildingReport = asyncHandler(async (req, res) => {
   const buildingId = req.user.buildingId;
   if (!buildingId) {
-    return res.status(400).json({ success: false, message: 'No masjid is assigned to this coordinator.' });
+    return res.status(400).json({ success: false, message: 'No masjid is assigned to this account.' });
   }
 
   const [building, students, teacherCount] = await Promise.all([

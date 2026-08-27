@@ -41,7 +41,7 @@ export default function CoordinatorsPage() {
       });
       setCoordinators(data || []);
     } catch (err) {
-      toast.error(err.message || 'Failed to load coordinators.');
+      toast.error(err.message || 'Failed to load GUDOOMIYE KUXIGEEN.');
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,7 @@ export default function CoordinatorsPage() {
 
   const validate = () => {
     const errors = {};
-    if (!form.name.trim()) errors.name = 'Coordinator name is required.';
+    if (!form.name.trim()) errors.name = 'GUDOOMIYE KUXIGEEN name is required.';
     if (!form.buildingId) errors.buildingId = 'Masjid is required.';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -97,15 +97,15 @@ export default function CoordinatorsPage() {
     try {
       if (editing) {
         await coordinatorsApi.update(editing.id, { name: form.name, buildingId: form.buildingId });
-        toast.success('Coordinator updated successfully.');
+        toast.success('GUDOOMIYE KUXIGEEN updated successfully.');
       } else {
         await coordinatorsApi.create(form);
-        toast.success('Coordinator created successfully.');
+        toast.success('GUDOOMIYE KUXIGEEN created successfully.');
       }
       setModalOpen(false);
       fetchCoordinators();
     } catch (err) {
-      toast.error(err.message || 'Failed to save coordinator.');
+      toast.error(err.message || 'Failed to save GUDOOMIYE KUXIGEEN.');
     } finally {
       setSaving(false);
     }
@@ -116,11 +116,11 @@ export default function CoordinatorsPage() {
     setDeleting(true);
     try {
       await coordinatorsApi.remove(deleteTarget.id);
-      toast.success('Coordinator deleted successfully.');
+      toast.success('GUDOOMIYE KUXIGEEN deleted successfully.');
       setDeleteTarget(null);
       fetchCoordinators();
     } catch (err) {
-      toast.error(err.message || 'Failed to delete coordinator.');
+      toast.error(err.message || 'Failed to delete GUDOOMIYE KUXIGEEN.');
     } finally {
       setDeleting(false);
     }
@@ -149,14 +149,14 @@ export default function CoordinatorsPage() {
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-brand-red dark:text-red-400">Coordinator Registration</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Manage coordinators and their assigned masjid.</p>
+          <h1 className="text-2xl font-bold text-brand-red dark:text-red-400">GUDOOMIYE KUXIGEEN Registration</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Manage GUDOOMIYE KUXIGEEN and their assigned masjid.</p>
         </div>
-        <Button onClick={openAddModal}>+ Add Coordinator</Button>
+        <Button onClick={openAddModal}>+ Add GUDOOMIYE KUXIGEEN</Button>
       </div>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <SearchBar value={search} onChange={setSearch} placeholder="Search coordinators..." />
+        <SearchBar value={search} onChange={setSearch} placeholder="Search GUDOOMIYE KUXIGEEN..." />
         <FilterSelect
           value={buildingFilter}
           onChange={(val) => setBuildingFilter(val ? Number(val) : '')}
@@ -167,12 +167,12 @@ export default function CoordinatorsPage() {
         />
       </div>
 
-      <DataTable columns={columns} data={coordinators} loading={loading} emptyMessage="No coordinators found" />
+      <DataTable columns={columns} data={coordinators} loading={loading} emptyMessage="No GUDOOMIYE KUXIGEEN found" />
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Coordinator' : 'Add Coordinator'}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit GUDOOMIYE KUXIGEEN' : 'Add GUDOOMIYE KUXIGEEN'}>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <FormField
-            label="Coordinator Name"
+            label="GUDOOMIYE KUXIGEEN Name"
             name="name"
             value={form.name}
             onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
@@ -206,7 +206,7 @@ export default function CoordinatorsPage() {
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         loading={deleting}
-        title="Delete Coordinator"
+        title="Delete GUDOOMIYE KUXIGEEN"
         message={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
       />
     </div>
