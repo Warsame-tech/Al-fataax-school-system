@@ -40,6 +40,9 @@ export const MultiStudentMarksheet = forwardRef(function MultiStudentMarksheet(
             <tr className="border-b border-gray-200 bg-brand-red/5 dark:border-gray-700 dark:bg-brand-red/10">
               <th className="whitespace-nowrap px-4 py-3 font-semibold text-brand-red dark:text-red-400">Student ID</th>
               <th className="whitespace-nowrap px-4 py-3 font-semibold text-brand-red dark:text-red-400">Student Name</th>
+              {rows?.some((r) => r.stageName) && (
+                <th className="whitespace-nowrap px-4 py-3 font-semibold text-brand-red dark:text-red-400">Stage</th>
+              )}
               {subjectColumns.map((sub) => (
                 <th key={sub.id} className="whitespace-nowrap px-4 py-3 font-semibold text-brand-red dark:text-red-400">
                   {sub.name}
@@ -59,6 +62,11 @@ export const MultiStudentMarksheet = forwardRef(function MultiStudentMarksheet(
                 <tr key={row.studentId} className="border-b border-gray-100 last:border-0 hover:bg-brand-gold-light/10 dark:border-gray-700 dark:hover:bg-brand-gold/10">
                   <td className="whitespace-nowrap px-4 py-3 text-gray-700 dark:text-gray-100">{row.studentId}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-gray-700 dark:text-gray-100">{row.studentName}</td>
+                  {rows?.some((r) => r.stageName) && (
+                    <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700 dark:text-gray-100" dir="rtl">
+                      {row.stageName || '—'}
+                    </td>
+                  )}
                   {subjectColumns.map((sub) => (
                     <td key={sub.id} className="whitespace-nowrap px-4 py-3 text-gray-700 dark:text-gray-100">
                       {marksBySubject[sub.id] ?? '—'}

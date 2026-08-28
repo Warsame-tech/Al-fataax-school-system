@@ -24,6 +24,10 @@ import ResultsAllReportPage from './pages/reports/ResultsAllReportPage';
 import ResultsByStageReportPage from './pages/reports/ResultsByStageReportPage';
 import BooksReportPage from './pages/reports/BooksReportPage';
 import StudentReportPage from './pages/reports/StudentReportPage';
+import GudoomiyeHomePage from './pages/gudoomiye/GudoomiyeHomePage';
+import MasjidStudentReportPage from './pages/gudoomiye/MasjidStudentReportPage';
+import NewStudentsReportPage from './pages/gudoomiye/NewStudentsReportPage';
+import OverallStatsReportPage from './pages/gudoomiye/OverallStatsReportPage';
 
 function RootRedirect() {
   const { user, loading } = useAuth();
@@ -35,7 +39,8 @@ function RootRedirect() {
     );
   }
   if (!user) return <Navigate to="/login" replace />;
-  return <Navigate to={user.userType === 'admin' ? '/dashboard' : '/results/view'} replace />;
+  const fallback = user.userType === 'admin' ? '/dashboard' : user.userType === 'gudoomiye' ? '/gudoomiye' : '/results/view';
+  return <Navigate to={fallback} replace />;
 }
 
 export default function App() {
@@ -45,7 +50,7 @@ export default function App() {
 
       <Route
         element={
-          <ProtectedRoute allowedRoles={['admin', 'teacher', 'student', 'coordinator']}>
+          <ProtectedRoute allowedRoles={['admin', 'teacher', 'student', 'coordinator', 'gudoomiye']}>
             <DashboardLayout />
           </ProtectedRoute>
         }
@@ -202,6 +207,47 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin']}>
               <StudentReportPage />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/gudoomiye"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'gudoomiye']}>
+              <GudoomiyeHomePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gudoomiye/masjid-students"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'gudoomiye']}>
+              <MasjidStudentReportPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gudoomiye/new-students"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'gudoomiye']}>
+              <NewStudentsReportPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gudoomiye/all-students"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'gudoomiye']}>
+              <StudentsReportPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gudoomiye/overall-stats"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'gudoomiye']}>
+              <OverallStatsReportPage />
             </ProtectedRoute>
           }
         />

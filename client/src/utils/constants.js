@@ -3,6 +3,7 @@ export const USER_TYPES = [
   { value: 'teacher', label: 'Teacher' },
   { value: 'student', label: 'Student' },
   { value: 'coordinator', label: 'GUDOOMIYE KUXIGEEN' },
+  { value: 'gudoomiye', label: 'GUDOOMIYE' },
 ];
 
 // Single source of truth for how each userType value is displayed, so a
@@ -14,9 +15,14 @@ export const USER_TYPE_LABELS = {
   teacher: 'Teacher',
   student: 'Student',
   coordinator: 'GUDOOMIYE KUXIGEEN',
+  gudoomiye: 'GUDOOMIYE',
 };
 
-export const USERNAME_PATTERN = /^[A-Za-z0-9_]+$/;
+// Widened to allow hyphens: a student's username is always their Student
+// ID (see UsersPage.jsx / server-side userController.js), and Student IDs
+// may contain hyphens (e.g. "STU-A102").
+export const USERNAME_PATTERN = /^[A-Za-z0-9_-]+$/;
+export const STUDENT_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 export const GENDERS = [
   { value: 'Male', label: 'Male' },

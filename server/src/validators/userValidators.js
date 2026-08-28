@@ -1,7 +1,10 @@
 const { body } = require('express-validator');
 
 const USER_TYPES = ['admin', 'teacher', 'student', 'coordinator', 'gudoomiye'];
-const USERNAME_PATTERN = /^[A-Za-z0-9_]+$/;
+// Widened to allow hyphens: a student's username is always their Student
+// ID (see userController.js), and Student IDs may contain hyphens
+// (e.g. "STU-A102").
+const USERNAME_PATTERN = /^[A-Za-z0-9_-]+$/;
 
 const create = [
   body('username')
@@ -9,11 +12,11 @@ const create = [
     .isLength({ min: 3, max: 100 })
     .withMessage('username must be 3-100 characters')
     .matches(USERNAME_PATTERN)
-    .withMessage('username may only contain letters, numbers, and underscores'),
+    .withMessage('username may only contain letters, numbers, underscores, and hyphens'),
   body('password').isLength({ min: 8 }).withMessage('password must be at least 8 characters'),
   body('userType').isIn(USER_TYPES).withMessage(`userType must be one of: ${USER_TYPES.join(', ')}`),
   body('teacherId').optional({ nullable: true }).isInt(),
-  body('studentId').optional({ nullable: true }).isInt(),
+  body('studentId').optional({ nullable: true }).isString(),
   body('coordinatorId').optional({ nullable: true }).isInt(),
 ];
 
@@ -23,11 +26,11 @@ const update = [
     .isLength({ min: 3, max: 100 })
     .withMessage('username must be 3-100 characters')
     .matches(USERNAME_PATTERN)
-    .withMessage('username may only contain letters, numbers, and underscores'),
+    .withMessage('username may only contain letters, numbers, underscores, and hyphens'),
   body('password').optional({ nullable: true }).isLength({ min: 8 }).withMessage('password must be at least 8 characters'),
   body('userType').isIn(USER_TYPES).withMessage(`userType must be one of: ${USER_TYPES.join(', ')}`),
   body('teacherId').optional({ nullable: true }).isInt(),
-  body('studentId').optional({ nullable: true }).isInt(),
+  body('studentId').optional({ nullable: true }).isString(),
   body('coordinatorId').optional({ nullable: true }).isInt(),
 ];
 

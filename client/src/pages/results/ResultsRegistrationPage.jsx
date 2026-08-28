@@ -86,8 +86,11 @@ export default function ResultsRegistrationPage() {
 
   useDataSync(['students'], fetchStudentsForSelection);
 
+  // The sheet is always for the currently-selected stage (classId, from the
+  // filter above) — a student's results endpoint returns every stage
+  // they're registered for, separated, so we pick out just this one.
   const loadSheet = useCallback(async (student) => {
-    if (!student) {
+    if (!student || !classId) {
       setRows([]);
       setSummary(null);
       return;
@@ -95,15 +98,16 @@ export default function ResultsRegistrationPage() {
     setSheetLoading(true);
     try {
       const [classData, resultData] = await Promise.all([
-        classesApi.get(student.classId),
+        classesApi.get(classId),
         resultsApi.byStudent(student.id).catch(() => null),
       ]);
+      const stageResult = resultData?.stages?.find((s) => s.classId === classId) || null;
       const books = classData?.Subjects || [];
-      setRows(buildSheetRows(books, resultData?.subjects));
+      setRows(buildSheetRows(books, stageResult?.subjects));
       setDirty(false);
       setSummary(
-        resultData
-          ? { total: resultData.total, average: resultData.average, grade: resultData.grade }
+        stageResult
+          ? { total: stageResult.total, average: stageResult.average, grade: stageResult.grade }
           : null,
       );
     } catch (err) {
@@ -113,7 +117,7 @@ export default function ResultsRegistrationPage() {
     } finally {
       setSheetLoading(false);
     }
-  }, []);
+  }, [classId]);
 
   // Keeps the currently open result sheet in sync with marks entered
   // elsewhere (another admin/tab) or book assignment changes, without
@@ -213,9 +217,10 @@ export default function ResultsRegistrationPage() {
       // Refresh the summary since one book's mark was removed.
       if (selectedStudent) {
         const resultData = await resultsApi.byStudent(selectedStudent.id).catch(() => null);
+        const stageResult = resultData?.stages?.find((s) => s.classId === classId) || null;
         setSummary(
-          resultData
-            ? { total: resultData.total, average: resultData.average, grade: resultData.grade }
+          stageResult
+            ? { total: stageResult.total, average: stageResult.average, grade: stageResult.grade }
             : null,
         );
       }
@@ -259,7 +264,7 @@ export default function ResultsRegistrationPage() {
           label="Student"
           name="studentId"
           value={studentId}
-          onChange={(e) => handleSelectStudent(e.target.value ? Number(e.target.value) : '')}
+          onChange={(e) => handleSelectStudent(e.target.value || '')}
           options={students}
           valueKey="id"
           labelKey="name"
@@ -286,7 +291,7 @@ export default function ResultsRegistrationPage() {
               <span dir="rtl">
                 Stage:{' '}
                 <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  {selectedStudent.Class?.name_ar || '—'}
+                  {classes.find((c) => c.id === classId)?.name_ar || '—'}
                 </span>
               </span>
             </div>

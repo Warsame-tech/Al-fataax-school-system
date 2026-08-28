@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import buildingsApi from '../../api/buildingsApi';
 import classesApi from '../../api/classesApi';
 import studentsApi from '../../api/studentsApi';
+import useAuth from '../../hooks/useAuth';
 import useDataSync from '../../hooks/useDataSync';
 import ReportDocument from '../../components/reports/ReportDocument';
 import ReportToolbar from '../../components/reports/ReportToolbar';
@@ -13,6 +14,9 @@ import Badge from '../../components/common/Badge';
 import { exportElementToPdf } from '../../utils/exportPdf';
 
 export default function StudentsReportPage() {
+  const { user } = useAuth();
+  const backTo = user?.userType === 'gudoomiye' ? '/gudoomiye' : '/reports';
+  const backLabel = user?.userType === 'gudoomiye' ? '← Back to GUDOOMIYE' : '← Back to Reports';
   const [buildings, setBuildings] = useState([]);
   const [classes, setClasses] = useState([]);
   const [buildingId, setBuildingId] = useState('');
@@ -68,8 +72,8 @@ export default function StudentsReportPage() {
   return (
     <div>
       <div className="no-print mb-4">
-        <Link to="/reports" className="text-sm font-medium text-brand-red hover:underline dark:text-red-400">
-          ← Back to Reports
+        <Link to={backTo} className="text-sm font-medium text-brand-red hover:underline dark:text-red-400">
+          {backLabel}
         </Link>
       </div>
 

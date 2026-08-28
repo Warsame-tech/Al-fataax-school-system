@@ -51,11 +51,10 @@ function StudentIdSearch() {
           </label>
           <input
             id="searchStudentId"
-            type="number"
-            min={1}
+            type="text"
             value={studentId}
             onChange={(e) => setStudentId(e.target.value)}
-            placeholder="Enter student ID..."
+            placeholder="Enter student ID... (e.g. STD001, STU-A102)"
             className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-gold dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
           />
         </div>
@@ -66,8 +65,25 @@ function StudentIdSearch() {
 
       {loading ? (
         <LoadingState label="Searching..." />
+      ) : result && !result.stages?.length ? (
+        <EmptyState message="No results have been entered for this student yet." />
       ) : (
-        result && <SingleStudentMarksheet result={result} />
+        result && (
+          <div className="flex flex-col gap-6">
+            {result.stages.map((stage) => (
+              <SingleStudentMarksheet
+                key={stage.classId}
+                title={`Results — ${stage.stageName}`}
+                result={{
+                  ...stage,
+                  studentName: result.studentName,
+                  studentId: result.studentId,
+                  buildingName: result.buildingName,
+                }}
+              />
+            ))}
+          </div>
+        )
       )}
     </div>
   );
@@ -88,6 +104,7 @@ export default function ViewResultsPage() {
   const [studentResult, setStudentResult] = useState(null);
   const [studentLoading, setStudentLoading] = useState(isStudent);
   const [studentError, setStudentError] = useState(null);
+  const [selectedStageId, setSelectedStageId] = useState(null);
 
   // Admin mode switcher
   const [mode, setMode] = useState('browse');
@@ -228,49 +245,77 @@ export default function ViewResultsPage() {
   };
 
   if (isStudent) {
+    const stages = studentResult?.stages || [];
+    const activeStage = stages.find((s) => s.classId === selectedStageId) || stages[0] || null;
+
     return (
       <div>
         {studentLoading ? (
           <LoadingState label="Loading your results..." />
         ) : studentError ? (
           <EmptyState message={studentError} />
-        ) : !studentResult || !studentResult.subjects || studentResult.subjects.length === 0 ? (
+        ) : stages.length === 0 ? (
           <EmptyState message="No results have been entered for you yet." />
         ) : (
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-4 text-lg font-semibold text-gray-800 dark:text-gray-100">{studentResult.studentName}</h2>
-            <div className="scroll-thin overflow-x-auto">
-              <table className="w-full min-w-max text-left text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-brand-red/5 dark:border-gray-700 dark:bg-brand-red/10">
-                    <th className="whitespace-nowrap px-4 py-2 font-semibold text-brand-red dark:text-red-400">Religious Book</th>
-                    <th className="whitespace-nowrap px-4 py-2 font-semibold text-brand-red dark:text-red-400">Marks</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {studentResult.subjects.map((s) => (
-                    <tr key={s.subjectId} className="border-b border-gray-100 last:border-0 dark:border-gray-700">
-                      <td className="whitespace-nowrap px-4 py-2 text-right text-gray-700 dark:text-gray-100" dir="rtl">
-                        {s.subjectName}
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-2 text-gray-700 dark:text-gray-100">{s.marks ?? '—'}</td>
-                    </tr>
+          <div>
+            {stages.length > 1 && (
+              <div className="mb-4 max-w-sm">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                  Which stage result do you want to view?
+                </label>
+                <select
+                  value={activeStage?.classId ?? ''}
+                  onChange={(e) => setSelectedStageId(Number(e.target.value))}
+                  dir="rtl"
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-right text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-gold dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                >
+                  {stages.map((s) => (
+                    <option key={s.classId} value={s.classId}>
+                      {s.stageName}
+                    </option>
                   ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-4 border-t border-gray-100 pt-4 text-sm dark:border-gray-700">
-              <span className="text-gray-600 dark:text-gray-300">
-                Total: <span className="font-semibold text-gray-900 dark:text-gray-100">{studentResult.total ?? '—'}</span>
-              </span>
-              <span className="text-gray-600 dark:text-gray-300">
-                Average: <span className="font-semibold text-gray-900 dark:text-gray-100">{studentResult.average ?? '—'}</span>
-              </span>
-              {studentResult.grade && (
-                <span className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                  Grade: <Badge color={gradeToColor(studentResult.grade)}>{studentResult.grade}</Badge>
+                </select>
+              </div>
+            )}
+
+            <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <h2 className="mb-4 text-lg font-semibold text-gray-800 dark:text-gray-100">
+                {studentResult.studentName}
+                {activeStage?.stageName && <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400" dir="rtl">— {activeStage.stageName}</span>}
+              </h2>
+              <div className="scroll-thin overflow-x-auto">
+                <table className="w-full min-w-max text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-brand-red/5 dark:border-gray-700 dark:bg-brand-red/10">
+                      <th className="whitespace-nowrap px-4 py-2 font-semibold text-brand-red dark:text-red-400">Religious Book</th>
+                      <th className="whitespace-nowrap px-4 py-2 font-semibold text-brand-red dark:text-red-400">Marks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(activeStage?.subjects || []).map((s) => (
+                      <tr key={s.subjectId} className="border-b border-gray-100 last:border-0 dark:border-gray-700">
+                        <td className="whitespace-nowrap px-4 py-2 text-right text-gray-700 dark:text-gray-100" dir="rtl">
+                          {s.subjectName}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-2 text-gray-700 dark:text-gray-100">{s.marks ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-4 border-t border-gray-100 pt-4 text-sm dark:border-gray-700">
+                <span className="text-gray-600 dark:text-gray-300">
+                  Total: <span className="font-semibold text-gray-900 dark:text-gray-100">{activeStage?.total ?? '—'}</span>
                 </span>
-              )}
+                <span className="text-gray-600 dark:text-gray-300">
+                  Average: <span className="font-semibold text-gray-900 dark:text-gray-100">{activeStage?.average ?? '—'}</span>
+                </span>
+                {activeStage?.grade && (
+                  <span className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                    Grade: <Badge color={gradeToColor(activeStage.grade)}>{activeStage.grade}</Badge>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         )}

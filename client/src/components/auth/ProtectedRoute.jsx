@@ -18,7 +18,8 @@ export default function ProtectedRoute({ children, allowedRoles }) {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.userType)) {
-    const fallback = user.userType === 'admin' ? '/dashboard' : '/results/view';
+    const fallback =
+      user.userType === 'admin' ? '/dashboard' : user.userType === 'gudoomiye' ? '/gudoomiye' : '/results/view';
     return <Navigate to={fallback} replace />;
   }
 

@@ -152,7 +152,7 @@ export default function StudentReportPage() {
           <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">Student</label>
           <select
             value={studentId}
-            onChange={(e) => setStudentId(e.target.value ? Number(e.target.value) : '')}
+            onChange={(e) => setStudentId(e.target.value || '')}
             disabled={!buildingId || !classId}
             className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-gold disabled:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:disabled:bg-gray-700"
           >
@@ -215,17 +215,34 @@ export default function StudentReportPage() {
                           <td className="whitespace-nowrap px-4 py-3 text-gray-700 dark:text-gray-100">{studentInfo.Building?.name || '—'}</td>
                         </tr>
                         <tr className="border-b border-gray-100 last:border-0 dark:border-gray-700">
-                          <td className="whitespace-nowrap px-4 py-3 font-semibold text-brand-red dark:text-red-400">Educational Stage</td>
+                          <td className="whitespace-nowrap px-4 py-3 font-semibold text-brand-red dark:text-red-400">Educational Stage(s)</td>
                           <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700 dark:text-gray-100" dir="rtl">
-                            {studentInfo.Class?.name_ar || '—'}
+                            {studentInfo.Stages?.length ? studentInfo.Stages.map((s) => s.name_ar).join(', ') : '—'}
                           </td>
                         </tr>
                       </tbody>
                     </table>
                   )}
                 </ReportDocument>
+              ) : !studentResults?.stages?.length ? (
+                <ReportDocument title="Student Results Report" innerRef={docRef}>
+                  <EmptyState message="No results have been entered for this student yet." />
+                </ReportDocument>
               ) : (
-                <SingleStudentMarksheet ref={docRef} result={studentResults} title="Student Results Report" />
+                <div ref={docRef} className="flex flex-col gap-6">
+                  {studentResults.stages.map((stage) => (
+                    <SingleStudentMarksheet
+                      key={stage.classId}
+                      title={`Student Results Report — ${stage.stageName}`}
+                      result={{
+                        ...stage,
+                        studentName: studentResults.studentName,
+                        studentId: studentResults.studentId,
+                        buildingName: studentResults.buildingName,
+                      }}
+                    />
+                  ))}
+                </div>
               )}
             </>
           )}

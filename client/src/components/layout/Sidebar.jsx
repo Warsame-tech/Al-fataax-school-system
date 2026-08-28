@@ -148,10 +148,12 @@ export default function Sidebar({ onNavigate }) {
   const location = useLocation();
   const isAdmin = user?.userType === 'admin';
   const isCoordinator = user?.userType === 'coordinator';
+  const isGudoomiye = user?.userType === 'gudoomiye';
 
   const inRegistrations = location.pathname.startsWith('/registrations');
   const inResults = location.pathname.startsWith('/results');
   const inReports = location.pathname.startsWith('/reports');
+  const inGudoomiye = location.pathname.startsWith('/gudoomiye');
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-gray-200 bg-white text-brand-red dark:border-brand-green-dark dark:bg-brand-green-dark dark:text-white">
@@ -252,6 +254,23 @@ export default function Sidebar({ onNavigate }) {
           <NavItem to="/reports" icon={NAV_ICONS.reports} onNavigate={onNavigate}>
             Reports
           </NavItem>
+        )}
+
+        {isGudoomiye && (
+          <SidebarGroup icon={NAV_ICONS.reports} label="GUDOOMIYE" hasActiveChild={inGudoomiye} defaultExpanded={inGudoomiye}>
+            <NavItem to="/gudoomiye/masjid-students" icon={NAV_ICONS.building} onNavigate={onNavigate} indented>
+              Masjid Students
+            </NavItem>
+            <NavItem to="/gudoomiye/new-students" icon={NAV_ICONS.student} onNavigate={onNavigate} indented>
+              New Students
+            </NavItem>
+            <NavItem to="/gudoomiye/all-students" icon={NAV_ICONS.viewResults} onNavigate={onNavigate} indented>
+              All Madrasa Students
+            </NavItem>
+            <NavItem to="/gudoomiye/overall-stats" icon={NAV_ICONS.dashboard} onNavigate={onNavigate} indented>
+              Overall Statistics
+            </NavItem>
+          </SidebarGroup>
         )}
       </nav>
     </aside>

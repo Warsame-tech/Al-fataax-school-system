@@ -1,6 +1,9 @@
 const { Student, Teacher, Building, Class } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 
+// A student can now be registered for multiple stages, so byStage tallies
+// count a multi-stage student once per stage they're enrolled in (byBuilding
+// still counts once per student — a student belongs to exactly one masjid).
 function groupStudents(students) {
   const byBuilding = new Map();
   const byStage = new Map();
@@ -16,15 +19,15 @@ function groupStudents(students) {
       else if (s.gender === 'Female') row.female += 1;
     }
 
-    const stId = s.Class?.id;
-    const stName = s.Class?.name_ar || 'Unknown';
-    if (stId != null) {
+    (s.Stages || []).forEach((stage) => {
+      const stId = stage.id;
+      const stName = stage.name_ar || 'Unknown';
       if (!byStage.has(stId)) byStage.set(stId, { stageId: stId, stageName: stName, count: 0, male: 0, female: 0 });
       const row = byStage.get(stId);
       row.count += 1;
       if (s.gender === 'Male') row.male += 1;
       else if (s.gender === 'Female') row.female += 1;
-    }
+    });
   });
 
   return {
@@ -37,7 +40,7 @@ const studentsReport = asyncHandler(async (req, res) => {
   const students = await Student.findAll({
     include: [
       { model: Building, attributes: ['id', 'name'] },
-      { model: Class, attributes: ['id', 'name_ar'] },
+      { model: Class, as: 'Stages', attributes: ['id', 'name_ar'], through: { attributes: [] } },
     ],
   });
   const { byBuilding, byStage } = groupStudents(students);
@@ -100,7 +103,7 @@ const myBuildingReport = asyncHandler(async (req, res) => {
     Building.findByPk(buildingId),
     Student.findAll({
       where: { buildingId },
-      include: [{ model: Class, attributes: ['id', 'name_ar'] }],
+      include: [{ model: Class, as: 'Stages', attributes: ['id', 'name_ar'], through: { attributes: [] } }],
     }),
     Teacher.count({ where: { buildingId } }),
   ]);
@@ -109,16 +112,18 @@ const myBuildingReport = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Masjid not found' });
   }
 
+  // A multi-stage student is tallied once per stage they're enrolled in.
   const byStage = new Map();
   students.forEach((s) => {
-    const stId = s.Class?.id;
-    const stName = s.Class?.name_ar || 'Unknown';
-    if (stId == null) return;
-    if (!byStage.has(stId)) byStage.set(stId, { stageId: stId, stageName: stName, count: 0, male: 0, female: 0 });
-    const row = byStage.get(stId);
-    row.count += 1;
-    if (s.gender === 'Male') row.male += 1;
-    else if (s.gender === 'Female') row.female += 1;
+    (s.Stages || []).forEach((stage) => {
+      const stId = stage.id;
+      const stName = stage.name_ar || 'Unknown';
+      if (!byStage.has(stId)) byStage.set(stId, { stageId: stId, stageName: stName, count: 0, male: 0, female: 0 });
+      const row = byStage.get(stId);
+      row.count += 1;
+      if (s.gender === 'Male') row.male += 1;
+      else if (s.gender === 'Female') row.female += 1;
+    });
   });
 
   return res.json({

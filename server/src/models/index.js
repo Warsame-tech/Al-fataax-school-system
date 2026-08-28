@@ -8,6 +8,7 @@ const Teacher = require('./Teacher');
 const Coordinator = require('./Coordinator');
 const User = require('./User');
 const Result = require('./Result');
+const StudentStage = require('./StudentStage');
 
 // Building <-> Student / Teacher
 Building.hasMany(Student, { foreignKey: 'buildingId', onDelete: 'RESTRICT' });
@@ -19,9 +20,17 @@ Teacher.belongsTo(Building, { foreignKey: 'buildingId' });
 Building.hasMany(Coordinator, { foreignKey: 'buildingId', onDelete: 'RESTRICT' });
 Coordinator.belongsTo(Building, { foreignKey: 'buildingId' });
 
-// Class (Educational Stage) <-> Student
-Class.hasMany(Student, { foreignKey: 'classId', onDelete: 'RESTRICT' });
-Student.belongsTo(Class, { foreignKey: 'classId' });
+// Class (Educational Stage) <-> Student, many-to-many via
+// student_stage_registrations (a student can be enrolled in multiple
+// stages over time — see StudentStage.js).
+Class.belongsToMany(Student, { through: StudentStage, foreignKey: 'classId', otherKey: 'studentId', as: 'Students' });
+Student.belongsToMany(Class, { through: StudentStage, foreignKey: 'studentId', otherKey: 'classId', as: 'Stages' });
+
+Student.hasMany(StudentStage, { foreignKey: 'studentId', onDelete: 'CASCADE' });
+StudentStage.belongsTo(Student, { foreignKey: 'studentId' });
+
+Class.hasMany(StudentStage, { foreignKey: 'classId', onDelete: 'RESTRICT' });
+StudentStage.belongsTo(Class, { foreignKey: 'classId' });
 
 // Fan <-> Subject (Religious Book)
 Fan.hasMany(Subject, { foreignKey: 'fanId', onDelete: 'RESTRICT' });
@@ -69,4 +78,5 @@ module.exports = {
   Coordinator,
   User,
   Result,
+  StudentStage,
 };

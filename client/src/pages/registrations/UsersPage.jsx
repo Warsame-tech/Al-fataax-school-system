@@ -24,9 +24,10 @@ const USER_TYPE_FORM_OPTIONS = [
   { value: 'teacher', label: 'Teacher' },
   { value: 'admin', label: 'Admin' },
   { value: 'coordinator', label: 'GUDOOMIYE KUXIGEEN' },
+  { value: 'gudoomiye', label: 'GUDOOMIYE' },
 ];
 
-const USER_TYPE_COLORS = { admin: 'red', teacher: 'green', student: 'gold', coordinator: 'blue' };
+const USER_TYPE_COLORS = { admin: 'red', teacher: 'green', student: 'gold', coordinator: 'blue', gudoomiye: 'neutral' };
 
 const EMPTY_FORM = { username: '', password: '', userType: '', teacherId: '', studentId: '', coordinatorId: '' };
 
@@ -104,18 +105,28 @@ export default function UsersPage() {
   };
 
   const handleUserTypeChange = (value) => {
-    setForm((f) => ({ ...f, userType: value, teacherId: '', studentId: '', coordinatorId: '' }));
+    setForm((f) => ({ ...f, userType: value, teacherId: '', studentId: '', coordinatorId: '', username: '' }));
+  };
+
+  // A student's username is always their Student ID — never a separately
+  // typed value — so selecting the student also fills (and the form keeps
+  // locked) the username field. The server re-derives this authoritatively
+  // regardless, so this is purely a UX convenience, not the enforcement.
+  const handleStudentChange = (studentId) => {
+    setForm((f) => ({ ...f, studentId, username: studentId || '' }));
   };
 
   const validate = () => {
     const errors = {};
-    const username = form.username.trim();
-    if (!username) {
-      errors.username = 'Username is required.';
-    } else if (username.length < 3 || username.length > 100) {
-      errors.username = 'Username must be 3-100 characters.';
-    } else if (!USERNAME_PATTERN.test(username)) {
-      errors.username = 'Username may only contain letters, numbers, and underscores.';
+    if (form.userType !== 'student') {
+      const username = form.username.trim();
+      if (!username) {
+        errors.username = 'Username is required.';
+      } else if (username.length < 3 || username.length > 100) {
+        errors.username = 'Username must be 3-100 characters.';
+      } else if (!USERNAME_PATTERN.test(username)) {
+        errors.username = 'Username may only contain letters, numbers, underscores, and hyphens.';
+      }
     }
     if (!editing && !form.password.trim()) {
       errors.password = 'Password is required.';
@@ -245,7 +256,7 @@ export default function UsersPage() {
               label="Student"
               name="studentId"
               value={form.studentId}
-              onChange={(e) => setForm((f) => ({ ...f, studentId: e.target.value ? Number(e.target.value) : '' }))}
+              onChange={(e) => handleStudentChange(e.target.value)}
               options={students}
               valueKey="id"
               labelKey="name"
@@ -282,11 +293,13 @@ export default function UsersPage() {
           <FormField
             label="Username"
             name="username"
-            value={form.username}
+            value={form.userType === 'student' ? form.username || 'Select a student first' : form.username}
             onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
             error={formErrors.username}
             placeholder="e.g. student123"
             autoComplete="username"
+            disabled={form.userType === 'student'}
+            hint={form.userType === 'student' ? 'Always the same as the selected student’s Student ID.' : undefined}
             required
           />
           <FormField

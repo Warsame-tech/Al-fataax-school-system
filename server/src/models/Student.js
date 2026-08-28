@@ -1,11 +1,17 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
+// Student ID is admin-typed free text (letters/digits/hyphens), not an
+// auto-increment integer — it also doubles as the student's login username
+// (see userController.js), so it's a real, meaningful identifier rather
+// than a surrogate key. Renaming it after creation goes through a small
+// transactional helper (see studentController.js's rename) that cascades
+// the change to Result.studentId and User.studentId together, rather than
+// allowing a plain PK edit.
 const Student = sequelize.define('Student', {
   id: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING(30),
     primaryKey: true,
-    autoIncrement: true,
   },
   name: {
     type: DataTypes.STRING(150),
@@ -19,14 +25,9 @@ const Student = sequelize.define('Student', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
-  classId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
 }, {
   indexes: [
     { fields: ['buildingId'] },
-    { fields: ['classId'] },
   ],
 });
 

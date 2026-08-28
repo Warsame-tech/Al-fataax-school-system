@@ -1,7 +1,10 @@
+const { QueryTypes } = require('sequelize');
 const { sequelize, Result, Student, Subject, Building, Class } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 const { buildResultRow } = require('../utils/gradeCalculator');
 const { ownBuildingId } = require('../utils/scoping');
+
+const studentStagesInclude = { model: Class, as: 'Stages', attributes: ['id', 'name_ar'], through: { attributes: [] } };
 
 // Fetches a student's Results joined with Subject and maps them into the
 // { subjectId, subjectName, marks } shape buildResultRow expects.
@@ -20,22 +23,69 @@ async function getResultRowsForStudent(studentId) {
   }));
 }
 
-async function buildStudentMarksheet(student) {
-  const resultRows = await getResultRowsForStudent(student.id);
-  const row = buildResultRow(resultRows);
+// A religious book belongs to exactly one educational stage (the existing
+// app-enforced exclusivity rule in classController.js/subjectController.js
+// — a book can never be assigned to two stages at once), so "which stage is
+// this result for" is reliably derivable from the book alone. This is the
+// single source of truth for stage membership; Result itself carries no
+// stageId column, avoiding a second copy of that fact that could drift.
+async function getStageBookIds(classId) {
+  const rows = await sequelize.query(
+    'SELECT book_id FROM stage_religious_books WHERE stage_id = :classId',
+    { replacements: { classId }, type: QueryTypes.SELECT },
+  );
+  return new Set(rows.map((r) => r.book_id));
+}
+
+// Builds a student's results grouped into one section per stage they're
+// currently registered for — stages are never combined into a single
+// total. Any result whose book isn't part of any of the student's current
+// stages (e.g. the book was reassigned since the mark was entered) is
+// still surfaced, in a small otherResults catch-all, so nothing silently
+// disappears from the accounting.
+async function buildStudentStageSheet(student) {
+  const [resultRows, stages] = await Promise.all([
+    getResultRowsForStudent(student.id),
+    student.Stages || [],
+  ]);
+
+  const bookSets = await Promise.all(stages.map((stage) => getStageBookIds(stage.id)));
+  const claimedSubjectIds = new Set();
+
+  const stageSections = stages.map((stage, i) => {
+    const bookIds = bookSets[i];
+    const rowsForStage = resultRows.filter((r) => bookIds.has(r.subjectId));
+    rowsForStage.forEach((r) => claimedSubjectIds.add(r.subjectId));
+    const row = buildResultRow(rowsForStage);
+    return {
+      classId: stage.id,
+      stageName: stage.name_ar,
+      subjects: rowsForStage.map((r) => ({ subjectId: r.subjectId, subjectName: r.subjectName, marks: r.marks })),
+      ...row,
+    };
+  });
+
+  const otherRows = resultRows.filter((r) => !claimedSubjectIds.has(r.subjectId));
+  const otherResults = otherRows.length
+    ? {
+        subjects: otherRows.map((r) => ({ subjectId: r.subjectId, subjectName: r.subjectName, marks: r.marks })),
+        ...buildResultRow(otherRows),
+      }
+    : null;
+
   return {
     studentId: student.id,
     studentName: student.name,
+    gender: student.gender,
     buildingId: student.buildingId,
     buildingName: student.Building?.name,
-    classId: student.classId,
-    stageName: student.Class?.name_ar,
-    ...row,
+    stages: stageSections,
+    ...(otherResults ? { otherResults } : {}),
   };
 }
 
 const create = asyncHandler(async (req, res) => {
-  const studentId = Number(req.body.studentId);
+  const studentId = req.body.studentId;
   const subjectId = Number(req.body.subjectId);
   const { marks } = req.body;
 
@@ -59,13 +109,13 @@ const create = asyncHandler(async (req, res) => {
   return res.status(201).json({ success: true, data: result });
 });
 
-// Saves an entire student's result sheet (every subject/book of their stage)
+// Saves an entire student's result sheet (every subject/book of one stage)
 // in one submission, inside a transaction so it's all-or-nothing.
 const bulkCreate = asyncHandler(async (req, res) => {
-  const studentId = Number(req.body.studentId);
+  const studentId = req.body.studentId;
   const marksArr = Array.isArray(req.body.marks) ? req.body.marks : [];
 
-  const student = await Student.findByPk(studentId);
+  const student = await Student.findByPk(studentId, { include: [Building, studentStagesInclude] });
   if (!student) {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
@@ -102,14 +152,8 @@ const bulkCreate = asyncHandler(async (req, res) => {
     }
   });
 
-  const studentWithRelations = await Student.findByPk(studentId, {
-    include: [
-      { model: Building, attributes: ['id', 'name'] },
-      { model: Class, attributes: ['id', 'name_ar'] },
-    ],
-  });
-  const marksheet = await buildStudentMarksheet(studentWithRelations);
-  return res.status(201).json({ success: true, data: marksheet });
+  const sheet = await buildStudentStageSheet(student);
+  return res.status(201).json({ success: true, data: sheet });
 });
 
 const update = asyncHandler(async (req, res) => {
@@ -138,8 +182,11 @@ const getByClass = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'buildingId and classId are required' });
   }
 
+  const bookIds = await getStageBookIds(classId);
+
   const students = await Student.findAll({
-    where: { buildingId, classId },
+    where: { buildingId },
+    include: [{ model: Class, as: 'Stages', attributes: [], through: { attributes: [] }, where: { id: classId }, required: true }],
     order: [['name', 'ASC']],
   });
 
@@ -147,7 +194,11 @@ const getByClass = asyncHandler(async (req, res) => {
 
   const data = await Promise.all(
     students.map(async (student) => {
-      const resultRows = await getResultRowsForStudent(student.id);
+      const allRows = await getResultRowsForStudent(student.id);
+      // Only this stage's books count toward this stage's total — a
+      // student enrolled in multiple stages must never have another
+      // stage's marks leak into this one.
+      const resultRows = allRows.filter((r) => bookIds.has(r.subjectId));
       resultRows.forEach((row) => {
         if (!subjectMap.has(row.subjectId)) {
           subjectMap.set(row.subjectId, row.subjectName);
@@ -168,42 +219,51 @@ const getByClass = asyncHandler(async (req, res) => {
 });
 
 // Admin-only: every student's results across every masjid/stage, optionally
-// narrowed by buildingId/classId. Subject columns are the union of every
-// book that has at least one result among the returned students.
+// narrowed by buildingId/classId. When classId is omitted, a student
+// enrolled in multiple stages produces one row PER stage (never a combined
+// total) — subjectColumns is the union of every book that has at least one
+// result among the returned rows.
 const getAll = asyncHandler(async (req, res) => {
   const where = {};
   if (req.query.buildingId) where.buildingId = Number(req.query.buildingId);
-  if (req.query.classId) where.classId = Number(req.query.classId);
+  const requestedClassId = req.query.classId ? Number(req.query.classId) : null;
 
+  const stageWhere = requestedClassId ? { id: requestedClassId } : {};
   const students = await Student.findAll({
     where,
     include: [
       { model: Building, attributes: ['id', 'name'] },
-      { model: Class, attributes: ['id', 'name_ar'] },
+      { model: Class, as: 'Stages', attributes: ['id', 'name_ar'], through: { attributes: [] }, where: stageWhere, required: true },
     ],
     order: [['name', 'ASC']],
   });
 
   const subjectMap = new Map();
-  const data = await Promise.all(
+  const rowsPerStudent = await Promise.all(
     students.map(async (student) => {
-      const resultRows = await getResultRowsForStudent(student.id);
-      resultRows.forEach((row) => {
-        if (!subjectMap.has(row.subjectId)) {
-          subjectMap.set(row.subjectId, row.subjectName);
-        }
-      });
-      const row = buildResultRow(resultRows);
-      return {
-        studentId: student.id,
-        studentName: student.name,
-        buildingName: student.Building?.name,
-        stageName: student.Class?.name_ar,
-        ...row,
-      };
+      const allRows = await getResultRowsForStudent(student.id);
+      const perStage = await Promise.all(
+        student.Stages.map(async (stage) => {
+          const bookIds = await getStageBookIds(stage.id);
+          const resultRows = allRows.filter((r) => bookIds.has(r.subjectId));
+          resultRows.forEach((row) => {
+            if (!subjectMap.has(row.subjectId)) subjectMap.set(row.subjectId, row.subjectName);
+          });
+          const row = buildResultRow(resultRows);
+          return {
+            studentId: student.id,
+            studentName: student.name,
+            buildingName: student.Building?.name,
+            stageName: stage.name_ar,
+            ...row,
+          };
+        }),
+      );
+      return perStage;
     })
   );
 
+  const data = rowsPerStudent.flat();
   const subjectColumns = Array.from(subjectMap.entries()).map(([id, name]) => ({ id, name }));
   return res.json({ success: true, data, subjectColumns });
 });
@@ -212,7 +272,7 @@ const getForStudent = asyncHandler(async (req, res) => {
   const student = await Student.findByPk(req.params.studentId, {
     include: [
       { model: Building, attributes: ['id', 'name', 'resultsVisible'] },
-      { model: Class, attributes: ['id', 'name_ar'] },
+      studentStagesInclude,
     ],
   });
   if (!student) {
@@ -230,15 +290,15 @@ const getForStudent = asyncHandler(async (req, res) => {
     });
   }
 
-  const marksheet = await buildStudentMarksheet(student);
-  return res.json({ success: true, data: marksheet });
+  const sheet = await buildStudentStageSheet(student);
+  return res.json({ success: true, data: sheet });
 });
 
 // Student-ID lookup used by the "Search by Student ID" tool. Admin can look
 // up anyone; teacher/coordinator are restricted to their own masjid — this
 // is the server-side enforcement, the frontend never decides access.
 const search = asyncHandler(async (req, res) => {
-  const studentId = Number(req.query.studentId);
+  const studentId = req.query.studentId ? String(req.query.studentId).trim() : '';
   if (!studentId) {
     return res.status(400).json({ success: false, message: 'studentId is required' });
   }
@@ -246,7 +306,7 @@ const search = asyncHandler(async (req, res) => {
   const student = await Student.findByPk(studentId, {
     include: [
       { model: Building, attributes: ['id', 'name'] },
-      { model: Class, attributes: ['id', 'name_ar'] },
+      studentStagesInclude,
     ],
   });
 
@@ -259,8 +319,8 @@ const search = asyncHandler(async (req, res) => {
     return res.status(403).json({ success: false, message: "You are not authorized to view this student's results." });
   }
 
-  const marksheet = await buildStudentMarksheet(student);
-  return res.json({ success: true, data: marksheet });
+  const sheet = await buildStudentStageSheet(student);
+  return res.json({ success: true, data: sheet });
 });
 
 module.exports = { create, bulkCreate, update, remove, getByClass, getAll, getForStudent, search };

@@ -5,6 +5,7 @@ const studentsApi = {
   get: (id) => axiosClient.get(`/students/${id}`),
   create: (payload) => axiosClient.post('/students', payload),
   update: (id, payload) => axiosClient.put(`/students/${id}`, payload),
+  rename: (id, newId) => axiosClient.put(`/students/${id}/rename`, { newId }),
   remove: (id) => axiosClient.delete(`/students/${id}`),
 };
 

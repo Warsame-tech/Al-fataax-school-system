@@ -133,15 +133,21 @@ const getOne = asyncHandler(async (req, res) => {
 });
 
 const create = asyncHandler(async (req, res) => {
-  const { username, password, userType } = req.body;
+  const { password, userType } = req.body;
   const teacherId = req.body.teacherId != null ? Number(req.body.teacherId) : null;
-  const studentId = req.body.studentId != null ? Number(req.body.studentId) : null;
+  const studentId = req.body.studentId || null;
   const coordinatorId = req.body.coordinatorId != null ? Number(req.body.coordinatorId) : null;
 
   const linkageError = await validateLinkage({ userType, teacherId, studentId, coordinatorId });
   if (linkageError) {
     return res.status(400).json({ success: false, message: linkageError });
   }
+
+  // A student's username is always the linked Student's own ID — never
+  // trust the client-sent username for this type, so it can't be bypassed
+  // via a direct API call (see client/src/pages/registrations/UsersPage.jsx
+  // for the matching UX-only lock).
+  const username = userType === 'student' ? studentId : req.body.username;
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
   const name = await resolveName({ userType, teacherId, studentId, coordinatorId, username });
@@ -166,9 +172,9 @@ const update = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Not found' });
   }
 
-  const { username, password, userType } = req.body;
+  const { password, userType } = req.body;
   const teacherId = req.body.teacherId != null ? Number(req.body.teacherId) : null;
-  const studentId = req.body.studentId != null ? Number(req.body.studentId) : null;
+  const studentId = req.body.studentId || null;
   const coordinatorId = req.body.coordinatorId != null ? Number(req.body.coordinatorId) : null;
 
   const linkageError = await validateLinkage({ userType, teacherId, studentId, coordinatorId }, user.id);
@@ -176,6 +182,7 @@ const update = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: linkageError });
   }
 
+  const username = userType === 'student' ? studentId : req.body.username;
   const name = await resolveName({ userType, teacherId, studentId, coordinatorId, username });
 
   const updates = {

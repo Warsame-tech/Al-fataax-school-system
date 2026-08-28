@@ -30,7 +30,7 @@ const User = sequelize.define('User', {
     unique: true,
   },
   studentId: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.STRING(30),
     allowNull: true,
     unique: true,
   },

@@ -29,7 +29,7 @@ const masjidStudentsReport = asyncHandler(async (req, res) => {
 
   const students = await Student.findAll({
     where,
-    include: [{ model: Class, attributes: ['id', 'name_ar'] }],
+    include: [{ model: Class, as: 'Stages', attributes: ['id', 'name_ar'], through: { attributes: [] } }],
     order: [['name', 'ASC']],
   });
 
@@ -47,7 +47,7 @@ const masjidStudentsReport = asyncHandler(async (req, res) => {
         id: s.id,
         name: s.name,
         gender: s.gender,
-        stageName: s.Class?.name_ar || null,
+        stageName: (s.Stages || []).map((st) => st.name_ar).join(', ') || null,
       })),
     },
   });
@@ -70,7 +70,7 @@ const newStudentsReport = asyncHandler(async (req, res) => {
     where,
     include: [
       { model: Building, attributes: ['id', 'name'] },
-      { model: Class, attributes: ['id', 'name_ar'] },
+      { model: Class, as: 'Stages', attributes: ['id', 'name_ar'], through: { attributes: [] } },
     ],
     order: [['createdAt', 'DESC']],
   });
@@ -101,7 +101,7 @@ const newStudentsReport = asyncHandler(async (req, res) => {
         name: s.name,
         gender: s.gender,
         buildingName: s.Building?.name || null,
-        stageName: s.Class?.name_ar || null,
+        stageName: (s.Stages || []).map((st) => st.name_ar).join(', ') || null,
         createdAt: s.createdAt,
       })),
     },
