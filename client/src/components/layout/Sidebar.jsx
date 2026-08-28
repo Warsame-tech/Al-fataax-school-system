@@ -213,16 +213,18 @@ export default function Sidebar({ onNavigate }) {
           </SidebarGroup>
         )}
 
-        <SidebarGroup icon={NAV_ICONS.results} label="Results" hasActiveChild={inResults} defaultExpanded={inResults}>
-          {isAdmin && (
-            <NavItem to="/results/register" icon={NAV_ICONS.resultsReg} onNavigate={onNavigate} indented>
-              Results Registration
+        {!isGudoomiye && (
+          <SidebarGroup icon={NAV_ICONS.results} label="Results" hasActiveChild={inResults} defaultExpanded={inResults}>
+            {isAdmin && (
+              <NavItem to="/results/register" icon={NAV_ICONS.resultsReg} onNavigate={onNavigate} indented>
+                Results Registration
+              </NavItem>
+            )}
+            <NavItem to="/results/view" icon={NAV_ICONS.viewResults} onNavigate={onNavigate} indented>
+              View Results
             </NavItem>
-          )}
-          <NavItem to="/results/view" icon={NAV_ICONS.viewResults} onNavigate={onNavigate} indented>
-            View Results
-          </NavItem>
-        </SidebarGroup>
+          </SidebarGroup>
+        )}
 
         {isAdmin && (
           <SidebarGroup icon={NAV_ICONS.reports} label="Reports" hasActiveChild={inReports} defaultExpanded={inReports}>

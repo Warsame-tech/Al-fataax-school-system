@@ -9,17 +9,20 @@ const validate = require('../middleware/validate');
 
 const router = express.Router();
 
-router.use(authenticate, authorizeRoles('admin', 'coordinator'));
+router.use(authenticate);
 
-router.get('/', studentController.list);
-router.get('/:id', studentController.getOne);
-router.post('/', studentValidators.create, validate, studentController.create);
-router.put('/:id', studentValidators.update, validate, studentController.update);
-router.put('/:id/rename', studentValidators.rename, validate, studentController.rename);
-router.delete('/:id', studentController.remove);
+// GUDOOMIYE is report-only: it can read the student list/detail (e.g. the
+// reused All Madrasa Students report) but never write, and never manage
+// stage registrations.
+router.get('/', authorizeRoles('admin', 'coordinator', 'gudoomiye'), studentController.list);
+router.get('/:id', authorizeRoles('admin', 'coordinator', 'gudoomiye'), studentController.getOne);
+router.post('/', authorizeRoles('admin', 'coordinator'), studentValidators.create, validate, studentController.create);
+router.put('/:id', authorizeRoles('admin', 'coordinator'), studentValidators.update, validate, studentController.update);
+router.put('/:id/rename', authorizeRoles('admin', 'coordinator'), studentValidators.rename, validate, studentController.rename);
+router.delete('/:id', authorizeRoles('admin', 'coordinator'), studentController.remove);
 
-router.get('/:id/stages', studentStageController.list);
-router.post('/:id/stages', studentStageValidators.add, validate, studentStageController.add);
-router.delete('/:id/stages/:regId', studentStageController.remove);
+router.get('/:id/stages', authorizeRoles('admin', 'coordinator'), studentStageController.list);
+router.post('/:id/stages', authorizeRoles('admin', 'coordinator'), studentStageValidators.add, validate, studentStageController.add);
+router.delete('/:id/stages/:regId', authorizeRoles('admin', 'coordinator'), studentStageController.remove);
 
 module.exports = router;

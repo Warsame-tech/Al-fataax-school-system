@@ -138,7 +138,7 @@ export default function StudentsReportPage() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-gray-700 dark:text-gray-100">{s.Building?.name || '—'}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-right text-gray-700 dark:text-gray-100" dir="rtl">
-                      {s.Class?.name_ar || '—'}
+                      {s.Stages?.length ? s.Stages.map((c) => c.name_ar).join(', ') : '—'}
                     </td>
                   </tr>
                 ))}
