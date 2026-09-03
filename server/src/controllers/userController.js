@@ -128,11 +128,14 @@ const create = asyncHandler(async (req, res) => {
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
   const name = await resolveName({ userType, studentId, coordinatorId, username });
 
+  const email = req.body.email?.trim() || null;
+
   const user = await User.create({
     username,
     name,
     passwordHash,
     userType,
+    email,
     studentId: userType === 'student' ? studentId : null,
     coordinatorId: userType === 'coordinator' ? coordinatorId : null,
   });
@@ -163,6 +166,7 @@ const update = asyncHandler(async (req, res) => {
     username,
     name,
     userType,
+    email: req.body.email?.trim() || null,
     studentId: userType === 'student' ? studentId : null,
     coordinatorId: userType === 'coordinator' ? coordinatorId : null,
   };

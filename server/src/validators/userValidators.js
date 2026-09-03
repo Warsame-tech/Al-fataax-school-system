@@ -17,6 +17,7 @@ const create = [
   body('userType').isIn(USER_TYPES).withMessage(`userType must be one of: ${USER_TYPES.join(', ')}`),
   body('studentId').optional({ nullable: true }).isString(),
   body('coordinatorId').optional({ nullable: true }).isInt(),
+  body('email').optional({ nullable: true, checkFalsy: true }).trim().isEmail().withMessage('email must be a valid email address'),
 ];
 
 const update = [
@@ -30,6 +31,7 @@ const update = [
   body('userType').isIn(USER_TYPES).withMessage(`userType must be one of: ${USER_TYPES.join(', ')}`),
   body('studentId').optional({ nullable: true }).isString(),
   body('coordinatorId').optional({ nullable: true }).isInt(),
+  body('email').optional({ nullable: true, checkFalsy: true }).trim().isEmail().withMessage('email must be a valid email address'),
 ];
 
 module.exports = { create, update };

@@ -27,7 +27,7 @@ const USER_TYPE_FORM_OPTIONS = [
 
 const USER_TYPE_COLORS = { admin: 'red', student: 'gold', coordinator: 'blue', gudoomiye: 'neutral' };
 
-const EMPTY_FORM = { username: '', password: '', userType: '', studentId: '', coordinatorId: '' };
+const EMPTY_FORM = { username: '', password: '', userType: '', studentId: '', coordinatorId: '', email: '' };
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -94,6 +94,7 @@ export default function UsersPage() {
       userType: user.userType,
       studentId: user.studentId || '',
       coordinatorId: user.coordinatorId || '',
+      email: user.email || '',
     });
     setFormErrors({});
     setModalOpen(true);
@@ -131,12 +132,15 @@ export default function UsersPage() {
     if (!form.userType) errors.userType = 'User type is required.';
     if (form.userType === 'student' && !form.studentId) errors.studentId = 'Student is required.';
     if (form.userType === 'coordinator' && !form.coordinatorId) errors.coordinatorId = 'GUDOOMIYE KUXIGEEN is required.';
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      errors.email = 'Enter a valid email address.';
+    }
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const buildPayload = () => {
-    const payload = { username: form.username.trim(), userType: form.userType };
+    const payload = { username: form.username.trim(), userType: form.userType, email: form.email.trim() || null };
     if (form.password.trim()) payload.password = form.password;
     if (form.userType === 'student') payload.studentId = form.studentId;
     if (form.userType === 'coordinator') payload.coordinatorId = form.coordinatorId;
@@ -292,6 +296,17 @@ export default function UsersPage() {
             required={!editing}
             hint={editing ? 'Leave blank to keep current password.' : undefined}
             autoComplete="new-password"
+          />
+          <FormField
+            label="Email (optional)"
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            error={formErrors.email}
+            placeholder="e.g. admin@example.com"
+            autoComplete="email"
+            hint="Only needed for the admin account — used by Forgot Password."
           />
           <div className="mt-2 flex justify-end gap-3">
             <Button type="button" variant="ghost" onClick={() => setModalOpen(false)} disabled={saving}>
