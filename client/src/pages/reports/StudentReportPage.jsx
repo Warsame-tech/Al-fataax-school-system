@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import buildingsApi from '../../api/buildingsApi';
@@ -12,7 +12,7 @@ import { SingleStudentMarksheet } from '../../components/results/ResultsMarkshee
 import LoadingState from '../../components/common/LoadingState';
 import EmptyState from '../../components/common/EmptyState';
 import Badge from '../../components/common/Badge';
-import { exportElementToPdf } from '../../utils/exportPdf';
+import { exportReportToPdf, exportReportToExcel } from '../../utils/reportExport';
 
 const VARIANTS = [
   { key: 'info', label: 'Student Information' },
@@ -31,8 +31,8 @@ export default function StudentReportPage() {
   const [studentInfo, setStudentInfo] = useState(null);
   const [studentResults, setStudentResults] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-  const docRef = useRef(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
 
   const fetchFilters = useCallback(() => {
     buildingsApi.list().then((data) => setBuildings(data || [])).catch(() => setBuildings([]));
@@ -92,15 +92,66 @@ export default function StudentReportPage() {
 
   useDataSync(['students', 'results'], fetchStudentDetail);
 
-  const handleDownload = async () => {
-    setDownloading(true);
+  const buildReport = () => {
+    if (variant === 'info') {
+      return {
+        title: 'Student Information Report',
+        meta: [
+          { label: 'Name', value: studentInfo?.name },
+          { label: 'Gender', value: studentInfo?.gender },
+          { label: 'Masjid', value: studentInfo?.Building?.name },
+          {
+            label: 'Educational Stage(s)',
+            value: studentInfo?.Stages?.length ? studentInfo.Stages.map((s) => s.name_ar).join(', ') : null,
+          },
+        ],
+        sections: [],
+      };
+    }
+    return {
+      title: 'Student Results Report',
+      meta: [
+        { label: 'Student ID', value: studentResults?.studentId },
+        { label: 'Student Name', value: studentResults?.studentName },
+        ...(studentResults?.buildingName ? [{ label: 'Masjid', value: studentResults.buildingName }] : []),
+      ],
+      sections: (studentResults?.stages || []).map((stage) => ({
+        heading: stage.stageName,
+        columns: [
+          { key: 'subjectName', label: 'Religious Book' },
+          { key: 'marks', label: 'Marks' },
+        ],
+        rows: (stage.subjects || []).map((s) => ({ subjectName: s.subjectName, marks: s.marks })),
+        summary: [
+          { label: 'Total', value: stage.total },
+          { label: 'Average', value: stage.average },
+          { label: 'Grade', value: stage.grade },
+        ],
+      })),
+    };
+  };
+
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
     try {
       const filename = variant === 'info' ? 'student-information-report.pdf' : 'student-results-report.pdf';
-      await exportElementToPdf(docRef.current, filename);
+      await exportReportToPdf(buildReport(), filename);
     } catch {
       toast.error('Failed to generate the PDF.');
     } finally {
-      setDownloading(false);
+      setDownloadingPdf(false);
+    }
+  };
+
+  const handleDownloadExcel = async () => {
+    setDownloadingExcel(true);
+    try {
+      const filename = variant === 'info' ? 'student-information-report.xlsx' : 'student-results-report.xlsx';
+      await exportReportToExcel(buildReport(), filename);
+    } catch {
+      toast.error('Failed to generate the Excel file.');
+    } finally {
+      setDownloadingExcel(false);
     }
   };
 
@@ -191,10 +242,16 @@ export default function StudentReportPage() {
             <LoadingState label="Loading report..." />
           ) : (
             <>
-              <ReportToolbar onDownload={handleDownload} downloading={downloading} disabled={!studentInfo && !studentResults} />
+              <ReportToolbar
+                onDownloadPdf={handleDownloadPdf}
+                onDownloadExcel={handleDownloadExcel}
+                downloadingPdf={downloadingPdf}
+                downloadingExcel={downloadingExcel}
+                disabled={!studentInfo && !studentResults}
+              />
 
               {variant === 'info' ? (
-                <ReportDocument title="Student Information Report" innerRef={docRef}>
+                <ReportDocument title="Student Information Report">
                   {!studentInfo ? (
                     <EmptyState message="Student information unavailable." />
                   ) : (
@@ -225,11 +282,11 @@ export default function StudentReportPage() {
                   )}
                 </ReportDocument>
               ) : !studentResults?.stages?.length ? (
-                <ReportDocument title="Student Results Report" innerRef={docRef}>
+                <ReportDocument title="Student Results Report">
                   <EmptyState message="No results have been entered for this student yet." />
                 </ReportDocument>
               ) : (
-                <div ref={docRef} className="flex flex-col gap-6">
+                <div className="flex flex-col gap-6">
                   {studentResults.stages.map((stage) => (
                     <SingleStudentMarksheet
                       key={stage.classId}

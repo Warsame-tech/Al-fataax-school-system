@@ -72,13 +72,6 @@ const STAGE_STUDENT_COLUMNS = [
 // action per report, and a bookmarkable/shareable URL per report).
 const REPORT_GROUPS = [
   {
-    label: 'Teachers',
-    reports: [
-      { to: '/reports/teachers', title: 'All Teachers Report', description: 'Every registered teacher, system-wide.' },
-      { to: '/reports/teachers-by-mosque', title: 'Teachers by Mosque Report', description: 'Teachers filtered to a single masjid.' },
-    ],
-  },
-  {
     label: 'Students',
     reports: [
       { to: '/reports/students', title: 'All Students Report', description: 'Full student roster, optionally filtered.' },
@@ -144,9 +137,9 @@ export default function ReportsPage() {
     fetchMyBuilding();
   }, [fetchMyBuilding]);
 
-  // This summary is built from students and teachers grouped by educational
-  // stage, so any of those three changing anywhere invalidates it.
-  useDataSync(['students', 'teachers', 'stages'], fetchMyBuilding);
+  // This summary is built from students grouped by educational stage, so
+  // either changing anywhere invalidates it.
+  useDataSync(['students', 'stages'], fetchMyBuilding);
 
   return (
     <div>
@@ -161,19 +154,38 @@ export default function ReportsPage() {
         ) : !myBuilding ? (
           <EmptyState message="No report data available." />
         ) : (
-          <ReportCard title={myBuilding.buildingName || 'My Masjid'}>
-            <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <StatPill label="Total Students" value={myBuilding.studentCount ?? 0} />
-              <StatPill label="Total Teachers" value={myBuilding.teacherCount ?? 0} />
+          <>
+            <ReportCard title={myBuilding.buildingName || 'My Masjid'}>
+              <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <StatPill label="Total Students" value={myBuilding.studentCount ?? 0} />
+              </div>
+              <h3 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">Students by Educational Stage</h3>
+              <SimpleTable
+                columns={STAGE_STUDENT_COLUMNS}
+                rows={myBuilding.studentsByStage || []}
+                rowKey="stageId"
+                emptyMessage="No students registered yet."
+              />
+            </ReportCard>
+
+            <div className="mb-8">
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                Reports
+              </h2>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <ReportTile
+                  to="/reports/students"
+                  title="All Students Report"
+                  description="Full student roster for your masjid, with search and filters."
+                />
+                <ReportTile
+                  to="/reports/results-all"
+                  title="All Students Results Report"
+                  description="Every student's results for your masjid, kept separate by stage."
+                />
+              </div>
             </div>
-            <h3 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-200">Students by Educational Stage</h3>
-            <SimpleTable
-              columns={STAGE_STUDENT_COLUMNS}
-              rows={myBuilding.studentsByStage || []}
-              rowKey="stageId"
-              emptyMessage="No students registered yet."
-            />
-          </ReportCard>
+          </>
         )
       ) : (
         REPORT_GROUPS.map((group) => (

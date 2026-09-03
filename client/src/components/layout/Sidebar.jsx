@@ -24,11 +24,6 @@ const NAV_ICONS = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.42A12.06 12.06 0 0121 12c0 2.4-.9 4.6-2.4 6.3M12 14l-6.16-3.42A12.06 12.06 0 003 12c0 2.4.9 4.6 2.4 6.3M12 14v7" />
     </svg>
   ),
-  teacher: (
-    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-  ),
   user: (
     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5.121 17.804A9 9 0 1118.879 6.196 9 9 0 015.12 17.804zM15 10a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -199,9 +194,6 @@ export default function Sidebar({ onNavigate }) {
             </NavItem>
             {isAdmin && (
               <>
-                <NavItem to="/registrations/teachers" icon={NAV_ICONS.teacher} onNavigate={onNavigate} indented>
-                  Teacher Registration
-                </NavItem>
                 <NavItem to="/registrations/coordinators" icon={NAV_ICONS.coordinator} onNavigate={onNavigate} indented>
                   GUDOOMIYE KUXIGEEN Registration
                 </NavItem>
@@ -228,12 +220,6 @@ export default function Sidebar({ onNavigate }) {
 
         {isAdmin && (
           <SidebarGroup icon={NAV_ICONS.reports} label="Reports" hasActiveChild={inReports} defaultExpanded={inReports}>
-            <NavItem to="/reports/teachers" icon={NAV_ICONS.teacher} onNavigate={onNavigate} indented>
-              All Teachers Report
-            </NavItem>
-            <NavItem to="/reports/teachers-by-mosque" icon={NAV_ICONS.building} onNavigate={onNavigate} indented>
-              Teachers by Mosque
-            </NavItem>
             <NavItem to="/reports/students" icon={NAV_ICONS.student} onNavigate={onNavigate} indented>
               All Students Report
             </NavItem>
@@ -264,10 +250,13 @@ export default function Sidebar({ onNavigate }) {
               Masjid Students
             </NavItem>
             <NavItem to="/gudoomiye/new-students" icon={NAV_ICONS.student} onNavigate={onNavigate} indented>
-              New Students
+              New Registered Students
             </NavItem>
             <NavItem to="/gudoomiye/all-students" icon={NAV_ICONS.viewResults} onNavigate={onNavigate} indented>
               All Madrasa Students
+            </NavItem>
+            <NavItem to="/gudoomiye/summary" icon={NAV_ICONS.reports} onNavigate={onNavigate} indented>
+              Summary Report
             </NavItem>
             <NavItem to="/gudoomiye/overall-stats" icon={NAV_ICONS.dashboard} onNavigate={onNavigate} indented>
               Overall Statistics

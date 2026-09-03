@@ -11,7 +11,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import LoadingState from '../../components/common/LoadingState';
 import EmptyState from '../../components/common/EmptyState';
 import Badge from '../../components/common/Badge';
-import { gradeToColor } from '../../utils/gradeUtils';
+import { gradeToColor, marksTextClass } from '../../utils/gradeUtils';
 
 // Merges the stage's full book list with the student's already-entered
 // results so every book gets a row (pre-filled if a result already exists),
@@ -330,7 +330,8 @@ export default function ResultsRegistrationPage() {
                               onChange={(e) => handleMarksChange(row.subjectId, e.target.value)}
                               placeholder="0-100"
                               className={`w-24 rounded-lg border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold dark:bg-gray-800 dark:text-gray-100
-                                ${rowErrors[row.subjectId] ? 'border-status-error' : 'border-gray-300 dark:border-gray-600'}`}
+                                ${rowErrors[row.subjectId] ? 'border-status-error' : 'border-gray-300 dark:border-gray-600'}
+                                ${marksTextClass(row.marks)}`}
                             />
                             {rowErrors[row.subjectId] && (
                               <p className="mt-1 text-xs text-status-error">{rowErrors[row.subjectId]}</p>

@@ -21,16 +21,17 @@ module.exports = {
   jwt: {
     secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN || '15m',
-    expiresInMs: parseDurationMs(process.env.JWT_EXPIRES_IN || '15m'),
   },
   cookieName: process.env.COOKIE_NAME || 'af_token',
+  // Optional at boot (unlike the vars above) so the rest of the app keeps
+  // working before these are set — only Forgot Password's email step fails
+  // until they are. See server/src/utils/mailer.js.
+  smtp: {
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_SECURE === 'true',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+  },
 };
-
-// Parses simple duration strings ("15m", "1d", "30s", "2h") into milliseconds.
-function parseDurationMs(value) {
-  const match = /^(\d+)(s|m|h|d)$/.exec(value.trim());
-  if (!match) return 15 * 60 * 1000; // fallback: 15 minutes
-  const amount = Number(match[1]);
-  const unitMs = { s: 1000, m: 60 * 1000, h: 60 * 60 * 1000, d: 24 * 60 * 60 * 1000 }[match[2]];
-  return amount * unitMs;
-}

@@ -12,6 +12,15 @@ const User = sequelize.define('User', {
     allowNull: false,
     unique: true,
   },
+  // Used by the Forgot Password flow (see passwordResetController.js) to
+  // look up which account an OTP should be issued for. Only the admin
+  // account is expected to have one set; nullable/unique so most users
+  // (whose username already doubles as their identity) never need it.
+  email: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true,
+  },
   name: {
     type: DataTypes.STRING(150),
     allowNull: false,
@@ -21,13 +30,8 @@ const User = sequelize.define('User', {
     allowNull: false,
   },
   userType: {
-    type: DataTypes.ENUM('admin', 'teacher', 'student', 'coordinator', 'gudoomiye'),
+    type: DataTypes.ENUM('admin', 'student', 'coordinator', 'gudoomiye'),
     allowNull: false,
-  },
-  teacherId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    unique: true,
   },
   studentId: {
     type: DataTypes.STRING(30),

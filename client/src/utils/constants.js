@@ -1,6 +1,5 @@
 export const USER_TYPES = [
   { value: 'admin', label: 'Admin' },
-  { value: 'teacher', label: 'Teacher' },
   { value: 'student', label: 'Student' },
   { value: 'coordinator', label: 'GUDOOMIYE KUXIGEEN' },
   { value: 'gudoomiye', label: 'GUDOOMIYE' },
@@ -12,7 +11,6 @@ export const USER_TYPES = [
 // re-deriving that mapping itself.
 export const USER_TYPE_LABELS = {
   admin: 'Admin',
-  teacher: 'Teacher',
   student: 'Student',
   coordinator: 'GUDOOMIYE KUXIGEEN',
   gudoomiye: 'GUDOOMIYE',

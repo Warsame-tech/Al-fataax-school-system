@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 
-// Same tile pattern as ReportsPage.jsx's ReportTile/REPORT_GROUPS, sized
-// for GUDOOMIYE's flat 4-report set (no grouping needed at this count).
+// Same tile pattern as ReportsPage.jsx's ReportTile/REPORT_GROUPS.
 const TILES = [
   {
     to: '/gudoomiye/masjid-students',
@@ -10,8 +9,8 @@ const TILES = [
   },
   {
     to: '/gudoomiye/new-students',
-    title: 'New Students',
-    description: 'Newly registered students, filterable by masjid, gender and date range.',
+    title: 'New Registered Students',
+    description: 'Students awaiting acceptance, filterable by masjid, gender and date range.',
   },
   {
     to: '/gudoomiye/all-students',
@@ -19,9 +18,14 @@ const TILES = [
     description: 'Full student roster across every masjid, optionally filtered.',
   },
   {
+    to: '/gudoomiye/summary',
+    title: 'Summary Report',
+    description: 'Total/male/female students, per-masjid breakdown, and pending vs. accepted counts.',
+  },
+  {
     to: '/gudoomiye/overall-stats',
     title: 'Overall Statistics',
-    description: 'System-wide totals: masjids, students, teachers, GUDOOMIYE KUXIGEEN, and more.',
+    description: 'System-wide totals: masjids, students, GUDOOMIYE KUXIGEEN, and more.',
   },
 ];
 

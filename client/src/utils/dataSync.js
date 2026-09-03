@@ -37,7 +37,7 @@ const RESOURCE_PATTERNS = [
   [/^\/subjects/, 'books'],
   [/^\/classes/, 'stages'],
   [/^\/students/, 'students'],
-  [/^\/teachers/, 'teachers'],
+  [/^\/gudoomiye\/reports\/students/, 'students'],
   [/^\/coordinators/, 'coordinators'],
   [/^\/users/, 'users'],
   [/^\/results/, 'results'],

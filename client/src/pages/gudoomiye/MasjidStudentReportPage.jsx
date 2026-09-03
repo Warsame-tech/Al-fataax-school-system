@@ -133,6 +133,7 @@ export default function MasjidStudentReportPage() {
               <table className="w-full min-w-max text-left text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 bg-brand-red/5 dark:border-gray-700 dark:bg-brand-red/10">
+                    <th className="whitespace-nowrap px-4 py-2.5 font-semibold text-brand-red dark:text-red-400">Student ID</th>
                     <th className="whitespace-nowrap px-4 py-2.5 font-semibold text-brand-red dark:text-red-400">Name</th>
                     <th className="whitespace-nowrap px-4 py-2.5 font-semibold text-brand-red dark:text-red-400">Gender</th>
                     <th className="whitespace-nowrap px-4 py-2.5 font-semibold text-brand-red dark:text-red-400">Educational Stage</th>
@@ -144,6 +145,7 @@ export default function MasjidStudentReportPage() {
                       key={s.id}
                       className="border-b border-gray-100 last:border-0 hover:bg-brand-gold-light/10 dark:border-gray-700 dark:hover:bg-brand-gold/10"
                     >
+                      <td className="whitespace-nowrap px-4 py-2.5 text-gray-700 dark:text-gray-100">{s.id}</td>
                       <td className="whitespace-nowrap px-4 py-2.5 text-gray-700 dark:text-gray-100">{s.name}</td>
                       <td className="whitespace-nowrap px-4 py-2.5">
                         <Badge color={s.gender === 'Male' ? 'blue' : 'gold'}>{s.gender}</Badge>

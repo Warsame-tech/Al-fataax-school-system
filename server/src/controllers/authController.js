@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const { User, Teacher, Coordinator } = require('../models');
+const { User, Coordinator } = require('../models');
 const { signToken } = require('../utils/jwt');
 const { getCookieOptions } = require('../utils/cookieOptions');
 const asyncHandler = require('../utils/asyncHandler');
@@ -11,7 +11,6 @@ function toPublicUser(user) {
     username: user.username,
     name: user.name,
     userType: user.userType,
-    teacherId: user.teacherId,
     studentId: user.studentId,
     coordinatorId: user.coordinatorId,
   };
@@ -35,10 +34,7 @@ const login = asyncHandler(async (req, res) => {
   }
 
   let buildingId = null;
-  if (user.userType === 'teacher' && user.teacherId) {
-    const teacher = await Teacher.findByPk(user.teacherId);
-    buildingId = teacher ? teacher.buildingId : null;
-  } else if (user.userType === 'coordinator' && user.coordinatorId) {
+  if (user.userType === 'coordinator' && user.coordinatorId) {
     const coordinator = await Coordinator.findByPk(user.coordinatorId);
     buildingId = coordinator ? coordinator.buildingId : null;
   }
@@ -47,7 +43,6 @@ const login = asyncHandler(async (req, res) => {
     id: user.id,
     username: user.username,
     userType: user.userType,
-    teacherId: user.teacherId,
     studentId: user.studentId,
     coordinatorId: user.coordinatorId,
     buildingId,
@@ -56,7 +51,10 @@ const login = asyncHandler(async (req, res) => {
   const token = signToken(tokenPayload);
   res.cookie(env.cookieName, token, getCookieOptions());
 
-  return res.json({ success: true, data: toPublicUser(user) });
+  // Must match `me`'s shape below — a coordinator's buildingId is needed
+  // immediately (e.g. Student Registration's locked Masjid field) without
+  // waiting for a page refresh to re-trigger the /auth/me fetch.
+  return res.json({ success: true, data: { ...toPublicUser(user), buildingId } });
 });
 
 const logout = asyncHandler(async (req, res) => {

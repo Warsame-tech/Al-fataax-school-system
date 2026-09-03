@@ -1,13 +1,12 @@
-const { Building, Fan, Student, Teacher, Coordinator, Class, Subject, Result } = require('../models');
+const { Building, Fan, Student, Coordinator, Class, Subject, Result } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 
 const summary = asyncHandler(async (req, res) => {
-  const [totalBuildings, totalFans, totalStudents, totalTeachers, totalCoordinators, totalClasses, totalSubjects, totalResults] =
+  const [totalBuildings, totalFans, totalStudents, totalCoordinators, totalClasses, totalSubjects, totalResults] =
     await Promise.all([
       Building.count(),
       Fan.count(),
       Student.count(),
-      Teacher.count(),
       Coordinator.count(),
       Class.count(),
       Subject.count(),
@@ -20,7 +19,6 @@ const summary = asyncHandler(async (req, res) => {
       totalBuildings,
       totalFans,
       totalStudents,
-      totalTeachers,
       totalCoordinators,
       totalClasses,
       totalSubjects,

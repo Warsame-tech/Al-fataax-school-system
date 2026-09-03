@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import usersApi from '../../api/usersApi';
-import teachersApi from '../../api/teachersApi';
 import studentsApi from '../../api/studentsApi';
 import coordinatorsApi from '../../api/coordinatorsApi';
 import useDataSync from '../../hooks/useDataSync';
@@ -21,19 +20,17 @@ import Badge from '../../components/common/Badge';
 // USER_TYPES (used for the filter dropdown), which keeps admin first.
 const USER_TYPE_FORM_OPTIONS = [
   { value: 'student', label: 'Student' },
-  { value: 'teacher', label: 'Teacher' },
   { value: 'admin', label: 'Admin' },
   { value: 'coordinator', label: 'GUDOOMIYE KUXIGEEN' },
   { value: 'gudoomiye', label: 'GUDOOMIYE' },
 ];
 
-const USER_TYPE_COLORS = { admin: 'red', teacher: 'green', student: 'gold', coordinator: 'blue', gudoomiye: 'neutral' };
+const USER_TYPE_COLORS = { admin: 'red', student: 'gold', coordinator: 'blue', gudoomiye: 'neutral' };
 
-const EMPTY_FORM = { username: '', password: '', userType: '', teacherId: '', studentId: '', coordinatorId: '' };
+const EMPTY_FORM = { username: '', password: '', userType: '', studentId: '', coordinatorId: '' };
 
 export default function UsersPage() {
   const [users, setUsers] = useState([]);
-  const [teachers, setTeachers] = useState([]);
   const [students, setStudents] = useState([]);
   const [coordinators, setCoordinators] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +69,6 @@ export default function UsersPage() {
   useDataSync(['users'], fetchUsers);
 
   const fetchLinkableRecords = useCallback(() => {
-    teachersApi.list().then((data) => setTeachers(data || [])).catch(() => setTeachers([]));
     studentsApi.list().then((data) => setStudents(data || [])).catch(() => setStudents([]));
     coordinatorsApi.list().then((data) => setCoordinators(data || [])).catch(() => setCoordinators([]));
   }, []);
@@ -81,7 +77,7 @@ export default function UsersPage() {
     fetchLinkableRecords();
   }, [fetchLinkableRecords]);
 
-  useDataSync(['teachers', 'students', 'coordinators'], fetchLinkableRecords);
+  useDataSync(['students', 'coordinators'], fetchLinkableRecords);
 
   const openAddModal = () => {
     setEditing(null);
@@ -96,7 +92,6 @@ export default function UsersPage() {
       username: user.username,
       password: '',
       userType: user.userType,
-      teacherId: user.teacherId || '',
       studentId: user.studentId || '',
       coordinatorId: user.coordinatorId || '',
     });
@@ -105,7 +100,7 @@ export default function UsersPage() {
   };
 
   const handleUserTypeChange = (value) => {
-    setForm((f) => ({ ...f, userType: value, teacherId: '', studentId: '', coordinatorId: '', username: '' }));
+    setForm((f) => ({ ...f, userType: value, studentId: '', coordinatorId: '', username: '' }));
   };
 
   // A student's username is always their Student ID — never a separately
@@ -134,7 +129,6 @@ export default function UsersPage() {
       errors.password = 'Password must be at least 8 characters.';
     }
     if (!form.userType) errors.userType = 'User type is required.';
-    if (form.userType === 'teacher' && !form.teacherId) errors.teacherId = 'Teacher is required.';
     if (form.userType === 'student' && !form.studentId) errors.studentId = 'Student is required.';
     if (form.userType === 'coordinator' && !form.coordinatorId) errors.coordinatorId = 'GUDOOMIYE KUXIGEEN is required.';
     setFormErrors(errors);
@@ -144,7 +138,6 @@ export default function UsersPage() {
   const buildPayload = () => {
     const payload = { username: form.username.trim(), userType: form.userType };
     if (form.password.trim()) payload.password = form.password;
-    if (form.userType === 'teacher') payload.teacherId = form.teacherId;
     if (form.userType === 'student') payload.studentId = form.studentId;
     if (form.userType === 'coordinator') payload.coordinatorId = form.coordinatorId;
     return payload;
@@ -200,7 +193,7 @@ export default function UsersPage() {
     {
       key: 'associated',
       header: 'Associated Person',
-      render: (row) => row.Teacher?.name || row.Student?.name || row.Coordinator?.name || '—',
+      render: (row) => row.Student?.name || row.Coordinator?.name || '—',
     },
     {
       key: 'actions',
@@ -223,7 +216,7 @@ export default function UsersPage() {
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-brand-red dark:text-red-400">User Registration</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Manage login accounts for admins, teachers, students and GUDOOMIYE KUXIGEEN.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Manage login accounts for admins, students, and GUDOOMIYE KUXIGEEN.</p>
         </div>
         <Button onClick={openAddModal}>+ Add User</Button>
       </div>
@@ -261,19 +254,6 @@ export default function UsersPage() {
               valueKey="id"
               labelKey="name"
               error={formErrors.studentId}
-              required
-            />
-          )}
-          {form.userType === 'teacher' && (
-            <SelectField
-              label="Teacher"
-              name="teacherId"
-              value={form.teacherId}
-              onChange={(e) => setForm((f) => ({ ...f, teacherId: e.target.value ? Number(e.target.value) : '' }))}
-              options={teachers}
-              valueKey="id"
-              labelKey="name"
-              error={formErrors.teacherId}
               required
             />
           )}

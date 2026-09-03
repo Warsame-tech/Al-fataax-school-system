@@ -53,11 +53,15 @@ const masjidStudentsReport = asyncHandler(async (req, res) => {
   });
 });
 
-// Cross-masjid monitoring of newly registered students: optional masjid,
-// optional gender, optional createdAt date range, plus a masjid-by-masjid
-// breakdown so an all-masjids view is still easy to scan.
+// The GUDOOMIYE approval queue: every student still awaiting acceptance
+// (registrationStatus = 'pending' is a hard filter, not optional — this
+// report's entire purpose is the pending list), further narrowable by
+// masjid, gender, and an optional createdAt date range, plus a
+// masjid-by-masjid breakdown so an all-masjids view is still easy to scan.
+// A student leaves this report the moment acceptStudent() flips their
+// status — they're never deleted, just no longer pending.
 const newStudentsReport = asyncHandler(async (req, res) => {
-  const where = {};
+  const where = { registrationStatus: 'pending' };
   if (req.query.buildingId) where.buildingId = Number(req.query.buildingId);
   if (req.query.gender) where.gender = req.query.gender;
   if (req.query.from || req.query.to) {
@@ -108,4 +112,59 @@ const newStudentsReport = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { masjidStudentsReport, newStudentsReport };
+// The only mutation GUDOOMIYE can perform anywhere in the system: flips one
+// student's registrationStatus to 'accepted'. Never touches name, gender,
+// masjid, stage, or any other field, and never deletes the row — this is
+// intentionally narrower than the general student-update endpoint (which
+// GUDOOMIYE has no access to at all) so the role stays view/report-only
+// plus this one specific approval action.
+const acceptStudent = asyncHandler(async (req, res) => {
+  const student = await Student.findByPk(req.params.id);
+  if (!student) {
+    return res.status(404).json({ success: false, message: 'Student not found' });
+  }
+  if (student.registrationStatus !== 'accepted') {
+    await student.update({ registrationStatus: 'accepted' });
+  }
+  return res.json({ success: true, data: student });
+});
+
+// System-wide, dynamically-computed snapshot: total/male/female across every
+// student regardless of status, a masjid-by-masjid student count, and the
+// pending/accepted split that powers the approval queue's headline numbers.
+const summaryReport = asyncHandler(async (req, res) => {
+  const students = await Student.findAll({
+    include: [{ model: Building, attributes: ['id', 'name'] }],
+  });
+
+  let pending = 0;
+  let accepted = 0;
+  const byBuilding = new Map();
+
+  students.forEach((s) => {
+    if (s.registrationStatus === 'pending') pending += 1;
+    else accepted += 1;
+
+    const bId = s.Building?.id;
+    const bName = s.Building?.name || 'Unknown';
+    if (bId == null) return;
+    if (!byBuilding.has(bId)) byBuilding.set(bId, { buildingId: bId, buildingName: bName, count: 0 });
+    byBuilding.get(bId).count += 1;
+  });
+
+  const { total, male, female } = tally(students);
+
+  return res.json({
+    success: true,
+    data: {
+      total,
+      male,
+      female,
+      pending,
+      accepted,
+      byBuilding: Array.from(byBuilding.values()).sort((a, b) => a.buildingName.localeCompare(b.buildingName)),
+    },
+  });
+});
+
+module.exports = { masjidStudentsReport, newStudentsReport, acceptStudent, summaryReport };

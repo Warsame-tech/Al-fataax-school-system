@@ -18,7 +18,6 @@ export const CARD_ICONS = {
   totalBuildings: icon('M3 21h18M6 21V7a1 1 0 011-1h4a1 1 0 011 1v14M15 21V4a1 1 0 011-1h3a1 1 0 011 1v17M9 9h.01M9 12h.01M9 15h.01'),
   totalFans: icon('M17.657 6.343a8 8 0 10-11.314 11.314M17.657 6.343L12 12m5.657-5.657L12 3m0 9l5.657 5.657M12 12L6.343 17.657'),
   totalStudents: icon('M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.42A12.06 12.06 0 0121 12c0 2.4-.9 4.6-2.4 6.3M12 14l-6.16-3.42A12.06 12.06 0 003 12c0 2.4.9 4.6 2.4 6.3M12 14v7'),
-  totalTeachers: icon('M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'),
   totalCoordinators: icon('M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m5-3.13a4 4 0 100-8 4 4 0 000 8zm6 3.13a4 4 0 00-3-6.13'),
   totalClasses: icon('M12 3l9 5-9 5-9-5 9-5z', 'M3 13l9 5 9-5', 'M3 18l9 5 9-5'),
   totalSubjects: icon(
@@ -33,7 +32,6 @@ export const CARD_DEFS = [
   { key: 'totalBuildings', label: 'Total Masjids' },
   { key: 'totalFans', label: 'Total Fans' },
   { key: 'totalStudents', label: 'Total Students' },
-  { key: 'totalTeachers', label: 'Total Teachers' },
   { key: 'totalCoordinators', label: 'Total GUDOOMIYE KUXIGEEN' },
   { key: 'totalClasses', label: 'Total Educational Stages' },
   { key: 'totalSubjects', label: 'Total Religious Books' },

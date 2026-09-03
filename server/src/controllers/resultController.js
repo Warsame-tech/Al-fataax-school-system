@@ -1,4 +1,4 @@
-const { QueryTypes } = require('sequelize');
+const { QueryTypes, Op } = require('sequelize');
 const { sequelize, Result, Student, Subject, Building, Class } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 const { buildResultRow } = require('../utils/gradeCalculator');
@@ -218,14 +218,30 @@ const getByClass = asyncHandler(async (req, res) => {
   return res.json({ success: true, data, subjectColumns });
 });
 
-// Admin-only: every student's results across every masjid/stage, optionally
-// narrowed by buildingId/classId. When classId is omitted, a student
-// enrolled in multiple stages produces one row PER stage (never a combined
-// total) — subjectColumns is the union of every book that has at least one
-// result among the returned rows.
+// Admin: every student's results across every masjid/stage, optionally
+// narrowed by buildingId/classId/gender/search (Student ID or name). A
+// coordinator (GUDOOMIYE KUXIGEEN) is always hard-locked to their own
+// masjid via ownBuildingId — any buildingId they send is ignored, so this
+// can never surface another masjid's results via a tampered request. When
+// classId is omitted, a student enrolled in multiple stages produces one
+// row PER stage (never a combined total) — subjectColumns is the union of
+// every book that has at least one result among the returned rows.
 const getAll = asyncHandler(async (req, res) => {
   const where = {};
-  if (req.query.buildingId) where.buildingId = Number(req.query.buildingId);
+  const forcedBuildingId = ownBuildingId(req.user);
+  if (forcedBuildingId) {
+    where.buildingId = forcedBuildingId;
+  } else if (req.query.buildingId) {
+    where.buildingId = Number(req.query.buildingId);
+  }
+  if (req.query.gender) where.gender = req.query.gender;
+  if (req.query.search) {
+    const term = String(req.query.search).trim();
+    where[Op.or] = [
+      { id: { [Op.like]: `%${term}%` } },
+      { name: { [Op.like]: `%${term}%` } },
+    ];
+  }
   const requestedClassId = req.query.classId ? Number(req.query.classId) : null;
 
   const stageWhere = requestedClassId ? { id: requestedClassId } : {};
@@ -253,6 +269,7 @@ const getAll = asyncHandler(async (req, res) => {
           return {
             studentId: student.id,
             studentName: student.name,
+            gender: student.gender,
             buildingName: student.Building?.name,
             stageName: stage.name_ar,
             ...row,
@@ -280,7 +297,7 @@ const getForStudent = asyncHandler(async (req, res) => {
   }
 
   // Only the student's own self-view is gated by their masjid's toggle —
-  // admin/teacher/coordinator reach this same endpoint too (e.g. from the
+  // admin/coordinator reach this same endpoint too (e.g. from the
   // Results Registration and Student Report pages) and must keep working
   // regardless of the toggle.
   if (req.user.userType === 'student' && student.Building?.resultsVisible === false) {
@@ -295,7 +312,7 @@ const getForStudent = asyncHandler(async (req, res) => {
 });
 
 // Student-ID lookup used by the "Search by Student ID" tool. Admin can look
-// up anyone; teacher/coordinator are restricted to their own masjid — this
+// up anyone; coordinators are restricted to their own masjid — this
 // is the server-side enforcement, the frontend never decides access.
 const search = asyncHandler(async (req, res) => {
   const studentId = req.query.studentId ? String(req.query.studentId).trim() : '';

@@ -27,6 +27,7 @@ export default function StudentsPage() {
 
   const [students, setStudents] = useState([]);
   const [buildings, setBuildings] = useState([]);
+  const [ownBuilding, setOwnBuilding] = useState(null);
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -77,13 +78,18 @@ export default function StudentsPage() {
   useDataSync(['students'], fetchStudents);
 
   const fetchDropdownData = useCallback(() => {
-    // Masjid list is an admin-only endpoint — a coordinator never needs it
-    // since their masjid is implicit/locked server-side.
-    if (!isCoordinator) {
+    // A coordinator never sees the cross-masjid list (that endpoint doesn't
+    // even authorize them) — only their own single assigned masjid, fetched
+    // by id so the Masjid field can show it pre-selected and locked.
+    if (isCoordinator) {
+      if (user?.buildingId) {
+        buildingsApi.get(user.buildingId).then((data) => setOwnBuilding(data)).catch(() => setOwnBuilding(null));
+      }
+    } else {
       buildingsApi.list().then((data) => setBuildings(data || [])).catch(() => setBuildings([]));
     }
     classesApi.list().then((data) => setClasses(data || [])).catch(() => setClasses([]));
-  }, [isCoordinator]);
+  }, [isCoordinator, user?.buildingId]);
 
   useEffect(() => {
     fetchDropdownData();
@@ -96,7 +102,9 @@ export default function StudentsPage() {
 
   const openAddModal = () => {
     setEditing(null);
-    setForm(EMPTY_FORM);
+    // A coordinator's masjid is fixed to their own assignment — pre-select
+    // it immediately rather than making them pick from a one-option list.
+    setForm({ ...EMPTY_FORM, buildingId: isCoordinator ? user?.buildingId ?? '' : '' });
     setFormErrors({});
     setModalOpen(true);
   };
@@ -125,7 +133,7 @@ export default function StudentsPage() {
     }
     if (!form.name.trim()) errors.name = 'Student name is required.';
     if (!form.gender) errors.gender = 'Gender is required.';
-    if (!isCoordinator && !form.buildingId) errors.buildingId = 'Masjid is required.';
+    if (!form.buildingId) errors.buildingId = 'Masjid is required.';
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -345,18 +353,20 @@ export default function StudentsPage() {
             error={formErrors.gender}
             required
           />
-          {!isCoordinator && (
-            <SelectField
-              label="Masjid"
-              name="buildingId"
-              value={form.buildingId}
-              onChange={(e) => setForm((f) => ({ ...f, buildingId: e.target.value ? Number(e.target.value) : '' }))}
-              options={buildings}
-              valueKey="id"
-              labelKey="name"
-              error={formErrors.buildingId}
-              required
-            />
+          <SelectField
+            label="Masjid"
+            name="buildingId"
+            value={form.buildingId}
+            onChange={(e) => setForm((f) => ({ ...f, buildingId: e.target.value ? Number(e.target.value) : '' }))}
+            options={isCoordinator ? (ownBuilding ? [ownBuilding] : []) : buildings}
+            valueKey="id"
+            labelKey="name"
+            error={formErrors.buildingId}
+            disabled={isCoordinator}
+            required
+          />
+          {isCoordinator && (
+            <p className="-mt-2 text-xs text-gray-500 dark:text-gray-400">Locked to your assigned masjid.</p>
           )}
           {!editing && (
             <p className="text-xs text-gray-500 dark:text-gray-400">

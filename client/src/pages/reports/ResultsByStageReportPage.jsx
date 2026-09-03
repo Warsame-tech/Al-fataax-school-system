@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import buildingsApi from '../../api/buildingsApi';
@@ -9,7 +9,7 @@ import { MultiStudentMarksheet } from '../../components/results/ResultsMarksheet
 import ReportToolbar from '../../components/reports/ReportToolbar';
 import LoadingState from '../../components/common/LoadingState';
 import EmptyState from '../../components/common/EmptyState';
-import { exportElementToPdf } from '../../utils/exportPdf';
+import { exportReportToPdf, exportReportToExcel } from '../../utils/reportExport';
 
 export default function ResultsByStageReportPage() {
   const [buildings, setBuildings] = useState([]);
@@ -19,8 +19,8 @@ export default function ResultsByStageReportPage() {
   const [rows, setRows] = useState([]);
   const [subjectColumns, setSubjectColumns] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [downloading, setDownloading] = useState(false);
-  const docRef = useRef(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
 
   const fetchFilters = useCallback(() => {
     buildingsApi.list().then((data) => setBuildings(data || [])).catch(() => setBuildings([]));
@@ -55,18 +55,54 @@ export default function ResultsByStageReportPage() {
 
   useDataSync(['results', 'students', 'stages'], fetchResults);
 
-  const handleDownload = async () => {
-    setDownloading(true);
+  const stageName = classes.find((c) => c.id === classId)?.name_ar;
+
+  const buildReport = () => ({
+    title: 'Stage Results Report',
+    meta: stageName ? [{ label: 'Stage', value: stageName }] : [],
+    sections: [
+      {
+        columns: [
+          { key: 'studentId', label: 'Student ID' },
+          { key: 'studentName', label: 'Student Name' },
+          ...subjectColumns.map((sc) => ({ key: `subject_${sc.id}`, label: sc.name })),
+          { key: 'total', label: 'Total' },
+          { key: 'average', label: 'Average' },
+          { key: 'grade', label: 'Grade' },
+        ],
+        rows: rows.map((r) => {
+          const marksBySubject = Object.fromEntries((r.subjects || []).map((s) => [s.subjectId, s.marks]));
+          const row = { studentId: r.studentId, studentName: r.studentName, total: r.total, average: r.average, grade: r.grade };
+          subjectColumns.forEach((sc) => {
+            row[`subject_${sc.id}`] = marksBySubject[sc.id];
+          });
+          return row;
+        }),
+      },
+    ],
+  });
+
+  const handleDownloadPdf = async () => {
+    setDownloadingPdf(true);
     try {
-      await exportElementToPdf(docRef.current, 'stage-results-report.pdf');
+      await exportReportToPdf(buildReport(), 'stage-results-report.pdf');
     } catch {
       toast.error('Failed to generate the PDF.');
     } finally {
-      setDownloading(false);
+      setDownloadingPdf(false);
     }
   };
 
-  const stageName = classes.find((c) => c.id === classId)?.name_ar;
+  const handleDownloadExcel = async () => {
+    setDownloadingExcel(true);
+    try {
+      await exportReportToExcel(buildReport(), 'stage-results-report.xlsx');
+    } catch {
+      toast.error('Failed to generate the Excel file.');
+    } finally {
+      setDownloadingExcel(false);
+    }
+  };
 
   return (
     <div>
@@ -118,12 +154,17 @@ export default function ResultsByStageReportPage() {
         <EmptyState message="Select a masjid and educational stage to view the report." />
       ) : (
         <>
-          <ReportToolbar onDownload={handleDownload} downloading={downloading} disabled={loading || rows.length === 0} />
+          <ReportToolbar
+            onDownloadPdf={handleDownloadPdf}
+            onDownloadExcel={handleDownloadExcel}
+            downloadingPdf={downloadingPdf}
+            downloadingExcel={downloadingExcel}
+            disabled={loading || rows.length === 0}
+          />
           {loading ? (
             <LoadingState label="Loading report..." />
           ) : (
             <MultiStudentMarksheet
-              ref={docRef}
               rows={rows}
               subjectColumns={subjectColumns}
               title={`Stage Results Report — ${stageName || ''}`}

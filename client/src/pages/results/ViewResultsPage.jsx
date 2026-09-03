@@ -9,8 +9,8 @@ import Button from '../../components/common/Button';
 import LoadingState from '../../components/common/LoadingState';
 import EmptyState from '../../components/common/EmptyState';
 import Badge from '../../components/common/Badge';
-import { gradeToColor } from '../../utils/gradeUtils';
-import { MultiStudentMarksheet, SingleStudentMarksheet } from '../../components/results/ResultsMarksheet';
+import { gradeToColor, marksTextClass } from '../../utils/gradeUtils';
+import { MultiStudentMarksheet, GroupedStudentResultsMarksheet, SingleStudentMarksheet } from '../../components/results/ResultsMarksheet';
 
 const MODES = [
   { key: 'browse', label: 'Browse by Masjid & Stage' },
@@ -19,7 +19,7 @@ const MODES = [
 ];
 
 // Student-ID search box, shared by admin's "Search by Student ID" mode and
-// the entire teacher/coordinator view (they never see masjid/stage pickers —
+// the entire coordinator view (coordinators never see masjid/stage pickers —
 // the backend already scopes them to their own masjid).
 function StudentIdSearch() {
   const [studentId, setStudentId] = useState('');
@@ -92,13 +92,8 @@ function StudentIdSearch() {
 export default function ViewResultsPage() {
   const { user } = useAuth();
   const isStudent = user?.userType === 'student';
-  const isTeacher = user?.userType === 'teacher';
   const isCoordinator = user?.userType === 'coordinator';
   const isAdmin = user?.userType === 'admin';
-  // Teachers and coordinators are both scoped to a single masjid (their own),
-  // so any gating logic that pre-locks the masjid from the logged-in user's
-  // profile applies equally to both roles.
-  const isTeacherOrCoordinator = isTeacher || isCoordinator;
 
   // Student flow (unchanged)
   const [studentResult, setStudentResult] = useState(null);
@@ -123,7 +118,6 @@ export default function ViewResultsPage() {
   const [allBuildingId, setAllBuildingId] = useState('');
   const [allClassId, setAllClassId] = useState('');
   const [allRows, setAllRows] = useState([]);
-  const [allSubjectColumns, setAllSubjectColumns] = useState([]);
   const [allLoading, setAllLoading] = useState(false);
 
   const fetchStudentResult = useCallback(async () => {
@@ -217,11 +211,9 @@ export default function ViewResultsPage() {
         classId: allClassId || undefined,
       });
       setAllRows(envelope?.data || []);
-      setAllSubjectColumns(envelope?.subjectColumns || []);
     } catch (err) {
       toast.error(err.message || 'Failed to load results.');
       setAllRows([]);
-      setAllSubjectColumns([]);
     } finally {
       setAllLoading(false);
     }
@@ -297,7 +289,9 @@ export default function ViewResultsPage() {
                         <td className="whitespace-nowrap px-4 py-2 text-right text-gray-700 dark:text-gray-100" dir="rtl">
                           {s.subjectName}
                         </td>
-                        <td className="whitespace-nowrap px-4 py-2 text-gray-700 dark:text-gray-100">{s.marks ?? '—'}</td>
+                        <td className={`whitespace-nowrap px-4 py-2 text-gray-700 dark:text-gray-100 ${marksTextClass(s.marks)}`}>
+                          {s.marks ?? '—'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -323,7 +317,7 @@ export default function ViewResultsPage() {
     );
   }
 
-  if (isTeacherOrCoordinator) {
+  if (isCoordinator) {
     return (
       <div>
         <h1 className="mb-1 text-2xl font-bold text-brand-red dark:text-red-400">View Results</h1>
@@ -453,7 +447,7 @@ export default function ViewResultsPage() {
           {allLoading ? (
             <LoadingState label="Loading results..." />
           ) : (
-            <MultiStudentMarksheet rows={allRows} subjectColumns={allSubjectColumns} emptyMessage="No results found." />
+            <GroupedStudentResultsMarksheet rows={allRows} emptyMessage="No results found." />
           )}
         </div>
       )}

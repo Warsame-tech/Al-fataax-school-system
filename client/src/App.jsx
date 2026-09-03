@@ -5,11 +5,11 @@ import DashboardLayout from './components/layout/DashboardLayout';
 import LoadingState from './components/common/LoadingState';
 
 import LoginPage from './pages/LoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import DashboardPage from './pages/DashboardPage';
 import BuildingsPage from './pages/registrations/BuildingsPage';
 import FansPage from './pages/registrations/FansPage';
 import StudentsPage from './pages/registrations/StudentsPage';
-import TeachersPage from './pages/registrations/TeachersPage';
 import CoordinatorsPage from './pages/registrations/CoordinatorsPage';
 import UsersPage from './pages/registrations/UsersPage';
 import ClassesPage from './pages/registrations/ClassesPage';
@@ -17,8 +17,6 @@ import SubjectsPage from './pages/registrations/SubjectsPage';
 import ResultsRegistrationPage from './pages/results/ResultsRegistrationPage';
 import ViewResultsPage from './pages/results/ViewResultsPage';
 import ReportsPage from './pages/ReportsPage';
-import TeachersReportPage from './pages/reports/TeachersReportPage';
-import TeachersByMosqueReportPage from './pages/reports/TeachersByMosqueReportPage';
 import StudentsReportPage from './pages/reports/StudentsReportPage';
 import ResultsAllReportPage from './pages/reports/ResultsAllReportPage';
 import ResultsByStageReportPage from './pages/reports/ResultsByStageReportPage';
@@ -27,6 +25,7 @@ import StudentReportPage from './pages/reports/StudentReportPage';
 import GudoomiyeHomePage from './pages/gudoomiye/GudoomiyeHomePage';
 import MasjidStudentReportPage from './pages/gudoomiye/MasjidStudentReportPage';
 import NewStudentsReportPage from './pages/gudoomiye/NewStudentsReportPage';
+import SummaryReportPage from './pages/gudoomiye/SummaryReportPage';
 import OverallStatsReportPage from './pages/gudoomiye/OverallStatsReportPage';
 
 function RootRedirect() {
@@ -47,10 +46,11 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
       <Route
         element={
-          <ProtectedRoute allowedRoles={['admin', 'teacher', 'student', 'coordinator', 'gudoomiye']}>
+          <ProtectedRoute allowedRoles={['admin', 'student', 'coordinator', 'gudoomiye']}>
             <DashboardLayout />
           </ProtectedRoute>
         }
@@ -85,14 +85,6 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin', 'coordinator']}>
               <StudentsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/registrations/teachers"
-          element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <TeachersPage />
             </ProtectedRoute>
           }
         />
@@ -140,7 +132,7 @@ export default function App() {
         <Route
           path="/results/view"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'teacher', 'student', 'coordinator']}>
+            <ProtectedRoute allowedRoles={['admin', 'student', 'coordinator']}>
               <ViewResultsPage />
             </ProtectedRoute>
           }
@@ -155,25 +147,9 @@ export default function App() {
           }
         />
         <Route
-          path="/reports/teachers"
-          element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <TeachersReportPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/reports/teachers-by-mosque"
-          element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <TeachersByMosqueReportPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/reports/students"
           element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'coordinator']}>
               <StudentsReportPage />
             </ProtectedRoute>
           }
@@ -181,7 +157,7 @@ export default function App() {
         <Route
           path="/reports/results-all"
           element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'coordinator']}>
               <ResultsAllReportPage />
             </ProtectedRoute>
           }
@@ -240,6 +216,14 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin', 'gudoomiye']}>
               <StudentsReportPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/gudoomiye/summary"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'gudoomiye']}>
+              <SummaryReportPage />
             </ProtectedRoute>
           }
         />

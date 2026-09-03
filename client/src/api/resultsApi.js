@@ -15,8 +15,8 @@ const resultsApi = {
   // Same envelope shape as byClass: { success, data: [...], subjectColumns: [...] }.
   all: (params = {}) => axiosClientEnvelope.get('/results/all', { params }),
   byStudent: (studentId) => axiosClient.get(`/results/student/${studentId}`),
-  // Admin/teacher/coordinator Student-ID lookup. Teacher/coordinator are
-  // restricted server-side to their own masjid (403 on cross-masjid attempts).
+  // Admin/coordinator Student-ID lookup. Coordinators are restricted
+  // server-side to their own masjid (403 on cross-masjid attempts).
   search: (studentId) => axiosClient.get('/results/search', { params: { studentId } }),
 };
 

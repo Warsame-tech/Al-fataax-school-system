@@ -3,7 +3,7 @@ const resultController = require('../controllers/resultController');
 const resultValidators = require('../validators/resultValidators');
 const authenticate = require('../middleware/authenticate');
 const authorizeRoles = require('../middleware/authorizeRoles');
-const scopeTeacherToBuilding = require('../middleware/scopeTeacherToBuilding');
+const scopeToOwnBuilding = require('../middleware/scopeToOwnBuilding');
 const scopeStudentToSelf = require('../middleware/scopeStudentToSelf');
 const validate = require('../middleware/validate');
 
@@ -13,14 +13,14 @@ router.use(authenticate);
 
 router.get(
   '/by-class',
-  authorizeRoles('admin', 'teacher', 'coordinator'),
-  scopeTeacherToBuilding,
+  authorizeRoles('admin', 'coordinator'),
+  scopeToOwnBuilding,
   resultController.getByClass
 );
 
-router.get('/all', authorizeRoles('admin'), resultController.getAll);
+router.get('/all', authorizeRoles('admin', 'coordinator'), resultController.getAll);
 
-router.get('/search', authorizeRoles('admin', 'teacher', 'coordinator'), resultController.search);
+router.get('/search', authorizeRoles('admin', 'coordinator'), resultController.search);
 
 router.get(
   '/student/:studentId',

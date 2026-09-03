@@ -1,5 +1,7 @@
-const { Student, Teacher, Building, Class } = require('../models');
+const { Op } = require('sequelize');
+const { Student, Building, Class } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
+const { ownBuildingId } = require('../utils/scoping');
 
 // A student can now be registered for multiple stages, so byStage tallies
 // count a multi-stage student once per stage they're enrolled in (byBuilding
@@ -50,44 +52,59 @@ const studentsReport = asyncHandler(async (req, res) => {
   });
 });
 
-const teachersReport = asyncHandler(async (req, res) => {
-  const teachers = await Teacher.findAll({
-    include: [{ model: Building, attributes: ['id', 'name'] }],
+// Flat student list for report pages. Admin gets a system-wide view,
+// optionally narrowed by the buildingId query param; a coordinator
+// (GUDOOMIYE KUXIGEEN) is always hard-locked to their own masjid via
+// ownBuildingId — any buildingId they send is ignored outright, so this
+// can never be used to read another masjid's students, whether from the
+// UI (which doesn't even offer a masjid picker for that role) or a
+// tampered direct API call. Kept separate from studentController.list
+// rather than adding a bypass flag there, so that endpoint's own-masjid
+// restriction can never accidentally be weakened by a change here.
+const allStudentsReport = asyncHandler(async (req, res) => {
+  const { search, buildingId, classId, gender } = req.query;
+  const where = {};
+  const forcedBuildingId = ownBuildingId(req.user);
+  if (forcedBuildingId) {
+    where.buildingId = forcedBuildingId;
+  } else if (buildingId) {
+    where.buildingId = Number(buildingId);
+  }
+  if (gender) where.gender = gender;
+  if (search) {
+    const term = String(search).trim();
+    where[Op.or] = [
+      { id: { [Op.like]: `%${term}%` } },
+      { name: { [Op.like]: `%${term}%` } },
+    ];
+  }
+
+  const stageInclude = classId
+    ? [{ model: Class, as: 'Stages', attributes: ['id', 'name_ar'], through: { attributes: [] }, where: { id: Number(classId) }, required: true }]
+    : [{ model: Class, as: 'Stages', attributes: ['id', 'name_ar'], through: { attributes: [] } }];
+
+  const students = await Student.findAll({
+    where,
+    include: [{ model: Building, attributes: ['id', 'name'] }, ...stageInclude],
+    order: [['name', 'ASC']],
   });
-  const byBuilding = new Map();
-  teachers.forEach((t) => {
-    const bId = t.Building?.id;
-    const bName = t.Building?.name || 'Unknown';
-    if (bId == null) return;
-    if (!byBuilding.has(bId)) byBuilding.set(bId, { buildingId: bId, buildingName: bName, count: 0 });
-    byBuilding.get(bId).count += 1;
-  });
-  return res.json({
-    success: true,
-    data: {
-      total: teachers.length,
-      byBuilding: Array.from(byBuilding.values()).sort((a, b) => a.buildingName.localeCompare(b.buildingName)),
-    },
-  });
+
+  return res.json({ success: true, data: students });
 });
 
 const byBuildingReport = asyncHandler(async (req, res) => {
-  const [buildings, students, teachers] = await Promise.all([
+  const [buildings, students] = await Promise.all([
     Building.findAll({ order: [['name', 'ASC']] }),
     Student.findAll({ attributes: ['id', 'buildingId'] }),
-    Teacher.findAll({ attributes: ['id', 'buildingId'] }),
   ]);
 
   const studentCounts = new Map();
   students.forEach((s) => studentCounts.set(s.buildingId, (studentCounts.get(s.buildingId) || 0) + 1));
-  const teacherCounts = new Map();
-  teachers.forEach((t) => teacherCounts.set(t.buildingId, (teacherCounts.get(t.buildingId) || 0) + 1));
 
   const data = buildings.map((b) => ({
     buildingId: b.id,
     buildingName: b.name,
     studentCount: studentCounts.get(b.id) || 0,
-    teacherCount: teacherCounts.get(b.id) || 0,
   }));
 
   return res.json({ success: true, data });
@@ -99,13 +116,12 @@ const myBuildingReport = asyncHandler(async (req, res) => {
     return res.status(400).json({ success: false, message: 'No masjid is assigned to this account.' });
   }
 
-  const [building, students, teacherCount] = await Promise.all([
+  const [building, students] = await Promise.all([
     Building.findByPk(buildingId),
     Student.findAll({
       where: { buildingId },
       include: [{ model: Class, as: 'Stages', attributes: ['id', 'name_ar'], through: { attributes: [] } }],
     }),
-    Teacher.count({ where: { buildingId } }),
   ]);
 
   if (!building) {
@@ -132,10 +148,9 @@ const myBuildingReport = asyncHandler(async (req, res) => {
       buildingId: building.id,
       buildingName: building.name,
       studentCount: students.length,
-      teacherCount,
       studentsByStage: Array.from(byStage.values()).sort((a, b) => a.stageName.localeCompare(b.stageName)),
     },
   });
 });
 
-module.exports = { studentsReport, teachersReport, byBuildingReport, myBuildingReport };
+module.exports = { studentsReport, allStudentsReport, byBuildingReport, myBuildingReport };

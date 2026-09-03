@@ -9,5 +9,7 @@ router.use(authenticate, authorizeRoles('admin', 'gudoomiye'));
 
 router.get('/masjid-students', gudoomiyeReportController.masjidStudentsReport);
 router.get('/new-students', gudoomiyeReportController.newStudentsReport);
+router.get('/summary', gudoomiyeReportController.summaryReport);
+router.patch('/students/:id/accept', gudoomiyeReportController.acceptStudent);
 
 module.exports = router;

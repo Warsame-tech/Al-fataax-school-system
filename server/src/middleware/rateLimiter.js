@@ -30,4 +30,16 @@ const heartbeatLimiter = rateLimit({
   message: { success: false, message: 'Too many session requests. Please try again later.' },
 });
 
-module.exports = { loginLimiter, accountWriteLimiter, heartbeatLimiter };
+// Forgot Password is unauthenticated by nature (that's the whole point),
+// so without its own budget it's an open email-bombing / OTP-guessing
+// endpoint. The OTP itself also has its own internal wrong-attempt limiter
+// (see passwordResetController.js) — this is the outer, IP-level layer.
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests. Please try again later.' },
+});
+
+module.exports = { loginLimiter, accountWriteLimiter, heartbeatLimiter, passwordResetLimiter };

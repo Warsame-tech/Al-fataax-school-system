@@ -25,6 +25,17 @@ const Student = sequelize.define('Student', {
     type: DataTypes.INTEGER,
     allowNull: false,
   },
+  // Approval workflow for GUDOOMIYE's "New Registered Students" queue: every
+  // new student starts 'pending' until a GUDOOMIYE user accepts them (see
+  // gudoomiyeReportController.acceptStudent) — accepting only flips this
+  // flag, the student row itself is never deleted. Pre-existing students
+  // were backfilled to 'accepted' by the migration that added this column
+  // (scripts/008-add-student-registration-status.js).
+  registrationStatus: {
+    type: DataTypes.ENUM('pending', 'accepted'),
+    allowNull: false,
+    defaultValue: 'pending',
+  },
 }, {
   indexes: [
     { fields: ['buildingId'] },

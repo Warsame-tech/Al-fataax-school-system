@@ -9,8 +9,8 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.get('/', authorizeRoles('admin', 'teacher', 'student', 'coordinator', 'gudoomiye'), classController.list);
-router.get('/:id', authorizeRoles('admin', 'teacher', 'student', 'coordinator', 'gudoomiye'), classController.getOne);
+router.get('/', authorizeRoles('admin', 'student', 'coordinator', 'gudoomiye'), classController.list);
+router.get('/:id', authorizeRoles('admin', 'student', 'coordinator', 'gudoomiye'), classController.getOne);
 router.post('/', authorizeRoles('admin'), classValidators.create, validate, classController.create);
 router.put('/:id', authorizeRoles('admin'), classValidators.update, validate, classController.update);
 router.delete('/:id', authorizeRoles('admin'), classController.remove);

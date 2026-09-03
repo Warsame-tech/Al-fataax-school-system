@@ -7,6 +7,7 @@ import useDataSync from '../../hooks/useDataSync';
 import LoadingState from '../../components/common/LoadingState';
 import EmptyState from '../../components/common/EmptyState';
 import Badge from '../../components/common/Badge';
+import Button from '../../components/common/Button';
 
 function StatPill({ label, value }) {
   return (
@@ -38,6 +39,7 @@ export default function NewStudentsReportPage() {
   const [to, setTo] = useState('');
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [acceptingId, setAcceptingId] = useState(null);
 
   const fetchBuildings = useCallback(() => {
     buildingsApi.list().then((data) => setBuildings(data || [])).catch(() => setBuildings([]));
@@ -73,6 +75,22 @@ export default function NewStudentsReportPage() {
 
   useDataSync(['students', 'masjids', 'stages'], fetchReport);
 
+  // Accepting flips the student's status server-side; the resulting
+  // 'students' data-sync event (see utils/dataSync.js) triggers fetchReport
+  // above automatically, which is what actually removes the row from this
+  // pending list — no manual local-state surgery needed here.
+  const handleAccept = async (student) => {
+    setAcceptingId(student.id);
+    try {
+      await gudoomiyeReportsApi.acceptStudent(student.id);
+      toast.success(`${student.name} has been accepted.`);
+    } catch (err) {
+      toast.error(err.message || 'Failed to accept this student.');
+    } finally {
+      setAcceptingId(null);
+    }
+  };
+
   return (
     <div>
       <div className="mb-4">
@@ -81,9 +99,10 @@ export default function NewStudentsReportPage() {
         </Link>
       </div>
 
-      <h1 className="mb-1 text-2xl font-bold text-brand-red dark:text-red-400">New Students</h1>
+      <h1 className="mb-1 text-2xl font-bold text-brand-red dark:text-red-400">New Registered Students</h1>
       <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-        Newly registered students, filterable by masjid, gender and date range.
+        Students awaiting acceptance, filterable by masjid, gender and date range. Accepting a
+        student removes them from this list — they remain in the main student records.
       </p>
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:max-w-3xl sm:grid-cols-2 lg:grid-cols-4">
@@ -143,9 +162,9 @@ export default function NewStudentsReportPage() {
       ) : (
         <>
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatPill label="Total Students" value={report.total} />
-            <StatPill label="Male" value={report.male} />
-            <StatPill label="Female" value={report.female} />
+            <StatPill label="Total Pending" value={report.total} />
+            <StatPill label="Pending Male" value={report.male} />
+            <StatPill label="Pending Female" value={report.female} />
           </div>
 
           <div className="mb-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
@@ -179,19 +198,21 @@ export default function NewStudentsReportPage() {
           </div>
 
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-4 text-lg font-semibold text-brand-red dark:text-red-400">Students</h2>
+            <h2 className="mb-4 text-lg font-semibold text-brand-red dark:text-red-400">Pending Students</h2>
             {!report.students || report.students.length === 0 ? (
-              <EmptyState message="No students found." />
+              <EmptyState message="No pending students match this filter." />
             ) : (
               <div className="scroll-thin w-full overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
                 <table className="w-full min-w-max text-left text-sm">
                   <thead>
                     <tr className="border-b border-gray-200 bg-brand-red/5 dark:border-gray-700 dark:bg-brand-red/10">
+                      <th className="whitespace-nowrap px-4 py-2.5 font-semibold text-brand-red dark:text-red-400">Student ID</th>
                       <th className="whitespace-nowrap px-4 py-2.5 font-semibold text-brand-red dark:text-red-400">Name</th>
                       <th className="whitespace-nowrap px-4 py-2.5 font-semibold text-brand-red dark:text-red-400">Gender</th>
                       <th className="whitespace-nowrap px-4 py-2.5 font-semibold text-brand-red dark:text-red-400">Masjid</th>
                       <th className="whitespace-nowrap px-4 py-2.5 font-semibold text-brand-red dark:text-red-400">Educational Stage</th>
                       <th className="whitespace-nowrap px-4 py-2.5 font-semibold text-brand-red dark:text-red-400">Registered On</th>
+                      <th className="whitespace-nowrap px-4 py-2.5 font-semibold text-brand-red dark:text-red-400">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -200,6 +221,7 @@ export default function NewStudentsReportPage() {
                         key={s.id}
                         className="border-b border-gray-100 last:border-0 hover:bg-brand-gold-light/10 dark:border-gray-700 dark:hover:bg-brand-gold/10"
                       >
+                        <td className="whitespace-nowrap px-4 py-2.5 text-gray-700 dark:text-gray-100">{s.id}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-gray-700 dark:text-gray-100">{s.name}</td>
                         <td className="whitespace-nowrap px-4 py-2.5">
                           <Badge color={s.gender === 'Male' ? 'blue' : 'gold'}>{s.gender}</Badge>
@@ -207,6 +229,11 @@ export default function NewStudentsReportPage() {
                         <td className="whitespace-nowrap px-4 py-2.5 text-gray-700 dark:text-gray-100">{s.buildingName || '—'}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-gray-700 dark:text-gray-100">{s.stageName || '—'}</td>
                         <td className="whitespace-nowrap px-4 py-2.5 text-gray-700 dark:text-gray-100">{formatDate(s.createdAt)}</td>
+                        <td className="whitespace-nowrap px-4 py-2.5">
+                          <Button size="sm" onClick={() => handleAccept(s)} disabled={acceptingId === s.id}>
+                            {acceptingId === s.id ? 'Accepting...' : 'Accept'}
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

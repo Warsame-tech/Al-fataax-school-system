@@ -4,18 +4,15 @@ const Fan = require('./Fan');
 const Class = require('./Class');
 const Subject = require('./Subject');
 const Student = require('./Student');
-const Teacher = require('./Teacher');
 const Coordinator = require('./Coordinator');
 const User = require('./User');
 const Result = require('./Result');
 const StudentStage = require('./StudentStage');
+const PasswordResetOtp = require('./PasswordResetOtp');
 
-// Building <-> Student / Teacher
+// Building <-> Student
 Building.hasMany(Student, { foreignKey: 'buildingId', onDelete: 'RESTRICT' });
 Student.belongsTo(Building, { foreignKey: 'buildingId' });
-
-Building.hasMany(Teacher, { foreignKey: 'buildingId', onDelete: 'RESTRICT' });
-Teacher.belongsTo(Building, { foreignKey: 'buildingId' });
 
 Building.hasMany(Coordinator, { foreignKey: 'buildingId', onDelete: 'RESTRICT' });
 Coordinator.belongsTo(Building, { foreignKey: 'buildingId' });
@@ -50,10 +47,7 @@ Subject.belongsToMany(Class, {
   timestamps: false,
 });
 
-// User <-> Teacher / Student
-Teacher.hasOne(User, { foreignKey: 'teacherId', onDelete: 'RESTRICT' });
-User.belongsTo(Teacher, { foreignKey: 'teacherId' });
-
+// User <-> Student
 Student.hasOne(User, { foreignKey: 'studentId', onDelete: 'RESTRICT' });
 User.belongsTo(Student, { foreignKey: 'studentId' });
 
@@ -67,6 +61,10 @@ Result.belongsTo(Student, { foreignKey: 'studentId' });
 Subject.hasMany(Result, { foreignKey: 'subjectId', onDelete: 'RESTRICT' });
 Result.belongsTo(Subject, { foreignKey: 'subjectId' });
 
+// User <-> PasswordResetOtp (Forgot Password flow)
+User.hasMany(PasswordResetOtp, { foreignKey: 'userId', onDelete: 'CASCADE' });
+PasswordResetOtp.belongsTo(User, { foreignKey: 'userId' });
+
 module.exports = {
   sequelize,
   Building,
@@ -74,9 +72,9 @@ module.exports = {
   Class,
   Subject,
   Student,
-  Teacher,
   Coordinator,
   User,
   Result,
   StudentStage,
+  PasswordResetOtp,
 };

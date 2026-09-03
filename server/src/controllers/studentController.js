@@ -11,19 +11,24 @@ const include = [
 ];
 
 // Coordinators may only ever act within their own masjid (route-level
-// authorizeRoles already excludes teacher/student from this controller
-// entirely, so in practice this only ever returns non-null for coordinator).
+// authorizeRoles already excludes students from this controller entirely,
+// so in practice this only ever returns non-null for coordinator).
 // Admins are unrestricted.
 function coordinatorBuildingId(req) {
   return ownBuildingId(req.user);
 }
 
 const list = asyncHandler(async (req, res) => {
-  const { search, buildingId, classId } = req.query;
+  const { search, buildingId, classId, gender } = req.query;
   const where = {};
   if (search) {
-    where.name = { [Op.like]: `%${search}%` };
+    const term = String(search).trim();
+    where[Op.or] = [
+      { id: { [Op.like]: `%${term}%` } },
+      { name: { [Op.like]: `%${term}%` } },
+    ];
   }
+  if (gender) where.gender = gender;
   const forcedBuildingId = coordinatorBuildingId(req);
   if (forcedBuildingId) {
     where.buildingId = forcedBuildingId;

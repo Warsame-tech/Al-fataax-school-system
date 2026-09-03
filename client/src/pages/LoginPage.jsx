@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import logoSeal from '../assets/logo-seal.jpeg';
 import useAuth from '../hooks/useAuth';
@@ -110,6 +110,12 @@ export default function LoginPage() {
           <Button type="submit" disabled={submitting} className="mt-2 w-full">
             {submitting ? 'Signing in...' : 'Sign In'}
           </Button>
+          <Link
+            to="/forgot-password"
+            className="text-center text-sm font-medium text-brand-red hover:underline dark:text-red-400"
+          >
+            Forgot Password?
+          </Link>
         </form>
       </div>
     </div>
