@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -41,6 +43,19 @@ app.use('/api/results', resultRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/gudoomiye/reports', gudoomiyeReportRoutes);
+
+// Serves the built React app from the same origin as the API when
+// client/dist exists (production deploys) — keeps the session cookie
+// same-site and avoids needing CORS/cross-origin config between two
+// separately hosted services. Absent locally, where the client runs on
+// its own Vite dev server instead.
+const clientDistPath = path.join(__dirname, '../../client/dist');
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+  app.get(/^(?!\/api).*/, (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Not found' });
