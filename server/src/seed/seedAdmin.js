@@ -29,6 +29,7 @@ async function run() {
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
   const admin = await User.create({
+    username: 'admin',
     name: 'System Admin',
     passwordHash,
     userType: 'admin',
@@ -38,7 +39,7 @@ async function run() {
   console.log(`\n${line}`);
   console.log('  ADMIN ACCOUNT CREATED');
   console.log(line);
-  console.log(`  Login ID:  ${admin.id}`);
+  console.log(`  Username:  ${admin.username}`);
   console.log(`  Password:  ${password}`);
   console.log(line);
   console.log('  WARNING: This password will not be shown again.');
