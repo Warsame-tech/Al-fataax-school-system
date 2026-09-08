@@ -18,6 +18,11 @@ const MODES = [
   { key: 'search', label: 'Search by Student ID' },
 ];
 
+const COORDINATOR_MODES = [
+  { key: 'all', label: 'View Results' },
+  { key: 'search', label: 'Search by Student ID' },
+];
+
 // Student-ID search box, shared by admin's "Search by Student ID" mode and
 // the entire coordinator view (coordinators never see masjid/stage pickers —
 // the backend already scopes them to their own masjid).
@@ -101,8 +106,10 @@ export default function ViewResultsPage() {
   const [studentError, setStudentError] = useState(null);
   const [selectedStageId, setSelectedStageId] = useState(null);
 
-  // Admin mode switcher
-  const [mode, setMode] = useState('browse');
+  // Admin/coordinator mode switcher — coordinators default straight to
+  // "View Results" (all students in their own masjid) rather than admin's
+  // masjid-picker browse mode, which doesn't apply to them.
+  const [mode, setMode] = useState(isCoordinator ? 'all' : 'browse');
 
   // Browse-by-masjid-&-stage flow (admin only)
   const [buildingId, setBuildingId] = useState('');
@@ -322,9 +329,35 @@ export default function ViewResultsPage() {
       <div>
         <h1 className="mb-1 text-2xl font-bold text-brand-red dark:text-red-400">View Results</h1>
         <p className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-          Search for a student in your masjid by their Student ID.
+          View every student's results in your masjid, or search for one by Student ID.
         </p>
-        <StudentIdSearch />
+
+        <div className="mb-6 flex flex-wrap gap-2">
+          {COORDINATOR_MODES.map((m) => (
+            <button
+              key={m.key}
+              type="button"
+              onClick={() => setMode(m.key)}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                mode === m.key
+                  ? 'bg-brand-red text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        {mode === 'all' ? (
+          allLoading ? (
+            <LoadingState label="Loading results..." />
+          ) : (
+            <GroupedStudentResultsMarksheet rows={allRows} emptyMessage="No results found." />
+          )
+        ) : (
+          <StudentIdSearch />
+        )}
       </div>
     );
   }
