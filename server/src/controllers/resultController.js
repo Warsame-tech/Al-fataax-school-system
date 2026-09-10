@@ -37,23 +37,26 @@ async function getStageBookIds(classId) {
   return new Set(rows.map((r) => r.book_id));
 }
 
-// Computes one Stage's ranking, live from current data, across every masjid
-// at once — Masjid is never a ranking boundary (a coordinator's own-masjid
-// scoping still applies to which *rows* they're shown elsewhere, but the
-// rank number itself always reflects the full cross-masjid Stage roster).
-// A student only qualifies if they currently have at least one Result for
-// one of this Stage's books — enrolled-but-not-yet-graded students are
-// excluded entirely rather than ranked at 0, and there is no persisted
-// "result set" concept in this schema (see CLAUDE.md), so recomputing live
-// from whatever Results currently exist is what keeps this from ever mixing
-// an old and a new round of marks: there is only ever one current state.
-// Returns Map<studentId, rank>.
-async function computeStageRankMap(classId) {
+// Computes one Stage's full ranked roster, live from current data, across
+// every masjid at once — Masjid is never a ranking boundary. A student only
+// qualifies if they currently have at least one Result for one of this
+// Stage's books — enrolled-but-not-yet-graded students are excluded
+// entirely rather than ranked at 0, and there is no persisted "result set"
+// concept in this schema (see CLAUDE.md), so recomputing live from whatever
+// Results currently exist is what keeps this from ever mixing an old and a
+// new round of marks: there is only ever one current state.
+// `buildingId`, if given, narrows the returned list to that masjid's
+// students *after* ranking — so a coordinator's own-masjid leaderboard
+// still shows each student's true Stage-wide rank, not a masjid-relative
+// one. Returns an array sorted by rank, ties broken the same way
+// everywhere via assignRanks().
+async function computeStageLeaderboard(classId, { buildingId } = {}) {
   const bookIds = await getStageBookIds(classId);
-  if (bookIds.size === 0) return new Map();
+  if (bookIds.size === 0) return [];
 
   const students = await Student.findAll({
     include: [
+      { model: Building, attributes: ['id', 'name'] },
       { model: Class, as: 'Stages', attributes: [], through: { attributes: [] }, where: { id: classId }, required: true },
     ],
   });
@@ -63,11 +66,26 @@ async function computeStageRankMap(classId) {
     const allRows = await getResultRowsForStudent(student.id);
     const resultRows = allRows.filter((r) => bookIds.has(r.subjectId));
     if (resultRows.length === 0) continue;
-    const { total, average } = buildResultRow(resultRows);
-    qualifying.push({ studentId: student.id, total, average });
+    const { total, average, grade } = buildResultRow(resultRows);
+    qualifying.push({
+      studentId: student.id,
+      studentName: student.name,
+      buildingId: student.buildingId,
+      buildingName: student.Building?.name,
+      total,
+      average,
+      grade,
+    });
   }
 
-  const ranked = assignRanks(qualifying, 'average');
+  const ranked = assignRanks(qualifying, 'average').sort((a, b) => a.rank - b.rank);
+  return buildingId ? ranked.filter((r) => r.buildingId === buildingId) : ranked;
+}
+
+// Thin wrapper over computeStageLeaderboard for callers that only need the
+// rank number itself (getByClass/getAll/buildStudentStageSheet).
+async function computeStageRankMap(classId) {
+  const ranked = await computeStageLeaderboard(classId);
   return new Map(ranked.map((r) => [r.studentId, r.rank]));
 }
 
@@ -340,6 +358,37 @@ const getAll = asyncHandler(async (req, res) => {
   return res.json({ success: true, data, subjectColumns });
 });
 
+// Top-N leaderboard, one list per Stage. A coordinator is hard-locked to
+// their own masjid's students (same ownBuildingId scoping as every other
+// results view for this role) — each still carries their true Stage-wide
+// rank, not a rank relative to just their own masjid. Admin sees every
+// masjid's top performers per Stage. Stages with no qualifying students
+// yet are omitted rather than shown empty.
+const getLeaderboard = asyncHandler(async (req, res) => {
+  const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
+  const forcedBuildingId = ownBuildingId(req.user);
+
+  const stages = await Class.findAll({ order: [['name_ar', 'ASC']] });
+  const data = (
+    await Promise.all(
+      stages.map(async (stage) => {
+        const leaderboard = await computeStageLeaderboard(
+          stage.id,
+          forcedBuildingId ? { buildingId: forcedBuildingId } : {},
+        );
+        if (leaderboard.length === 0) return null;
+        return {
+          stageId: stage.id,
+          stageName: stage.name_ar,
+          students: leaderboard.slice(0, limit),
+        };
+      }),
+    )
+  ).filter(Boolean);
+
+  return res.json({ success: true, data });
+});
+
 const getForStudent = asyncHandler(async (req, res) => {
   const student = await Student.findByPk(req.params.studentId, {
     include: [
@@ -395,4 +444,4 @@ const search = asyncHandler(async (req, res) => {
   return res.json({ success: true, data: sheet });
 });
 
-module.exports = { create, bulkCreate, update, remove, getByClass, getAll, getForStudent, search };
+module.exports = { create, bulkCreate, update, remove, getByClass, getAll, getLeaderboard, getForStudent, search };

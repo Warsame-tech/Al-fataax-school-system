@@ -215,6 +215,16 @@ export default function Sidebar({ onNavigate }) {
             <NavItem to="/results/view" icon={NAV_ICONS.viewResults} onNavigate={onNavigate} indented>
               View Results
             </NavItem>
+            {(isAdmin || isCoordinator) && (
+              <>
+                <NavItem to="/results/top3" icon={NAV_ICONS.viewResults} onNavigate={onNavigate} indented>
+                  Top 3 Each Stage
+                </NavItem>
+                <NavItem to="/results/top10" icon={NAV_ICONS.viewResults} onNavigate={onNavigate} indented>
+                  Top 10 Each Stage
+                </NavItem>
+              </>
+            )}
           </SidebarGroup>
         )}
 

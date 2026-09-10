@@ -20,6 +20,8 @@ router.get(
 
 router.get('/all', authorizeRoles('admin', 'coordinator'), resultController.getAll);
 
+router.get('/leaderboard', authorizeRoles('admin', 'coordinator'), resultController.getLeaderboard);
+
 router.get('/search', authorizeRoles('admin', 'coordinator'), resultController.search);
 
 router.get(

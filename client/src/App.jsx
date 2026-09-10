@@ -16,6 +16,7 @@ import ClassesPage from './pages/registrations/ClassesPage';
 import SubjectsPage from './pages/registrations/SubjectsPage';
 import ResultsRegistrationPage from './pages/results/ResultsRegistrationPage';
 import ViewResultsPage from './pages/results/ViewResultsPage';
+import TopStudentsPage from './pages/results/TopStudentsPage';
 import ReportsPage from './pages/ReportsPage';
 import StudentsReportPage from './pages/reports/StudentsReportPage';
 import ResultsAllReportPage from './pages/reports/ResultsAllReportPage';
@@ -134,6 +135,22 @@ export default function App() {
           element={
             <ProtectedRoute allowedRoles={['admin', 'student', 'coordinator']}>
               <ViewResultsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/results/top3"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'coordinator']}>
+              <TopStudentsPage limit={3} title="Top 3 Each Stage" description="The top 3 highest-scoring students in every educational stage." />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/results/top10"
+          element={
+            <ProtectedRoute allowedRoles={['admin', 'coordinator']}>
+              <TopStudentsPage limit={10} title="Top 10 Each Stage" description="The top 10 highest-scoring students in every educational stage." />
             </ProtectedRoute>
           }
         />

@@ -14,6 +14,9 @@ const resultsApi = {
   // Admin-only, system-wide marksheet, optionally narrowed by buildingId/classId.
   // Same envelope shape as byClass: { success, data: [...], subjectColumns: [...] }.
   all: (params = {}) => axiosClientEnvelope.get('/results/all', { params }),
+  // Top-N leaderboard per Stage, cross-masjid for admin, own-masjid-only for
+  // coordinator. Resolves to [{ stageId, stageName, students: [...] }, ...].
+  leaderboard: (limit) => axiosClient.get('/results/leaderboard', { params: { limit } }),
   byStudent: (studentId) => axiosClient.get(`/results/student/${studentId}`),
   // Admin/coordinator Student-ID lookup. Coordinators are restricted
   // server-side to their own masjid (403 on cross-masjid attempts).
