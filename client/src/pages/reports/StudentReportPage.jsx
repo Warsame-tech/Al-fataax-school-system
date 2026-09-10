@@ -126,6 +126,7 @@ export default function StudentReportPage() {
           { label: 'Total', value: stage.total },
           { label: 'Average', value: stage.average },
           { label: 'Grade', value: stage.grade },
+          { label: 'Rank', value: stage.rank != null ? `#${stage.rank}` : null },
         ],
       })),
     };

@@ -1,7 +1,7 @@
 const { QueryTypes, Op } = require('sequelize');
 const { sequelize, Result, Student, Subject, Building, Class } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
-const { buildResultRow } = require('../utils/gradeCalculator');
+const { buildResultRow, assignRanks } = require('../utils/gradeCalculator');
 const { ownBuildingId } = require('../utils/scoping');
 
 const studentStagesInclude = { model: Class, as: 'Stages', attributes: ['id', 'name_ar'], through: { attributes: [] } };
@@ -37,6 +37,40 @@ async function getStageBookIds(classId) {
   return new Set(rows.map((r) => r.book_id));
 }
 
+// Computes one Stage's ranking, live from current data, across every masjid
+// at once — Masjid is never a ranking boundary (a coordinator's own-masjid
+// scoping still applies to which *rows* they're shown elsewhere, but the
+// rank number itself always reflects the full cross-masjid Stage roster).
+// A student only qualifies if they currently have at least one Result for
+// one of this Stage's books — enrolled-but-not-yet-graded students are
+// excluded entirely rather than ranked at 0, and there is no persisted
+// "result set" concept in this schema (see CLAUDE.md), so recomputing live
+// from whatever Results currently exist is what keeps this from ever mixing
+// an old and a new round of marks: there is only ever one current state.
+// Returns Map<studentId, rank>.
+async function computeStageRankMap(classId) {
+  const bookIds = await getStageBookIds(classId);
+  if (bookIds.size === 0) return new Map();
+
+  const students = await Student.findAll({
+    include: [
+      { model: Class, as: 'Stages', attributes: [], through: { attributes: [] }, where: { id: classId }, required: true },
+    ],
+  });
+
+  const qualifying = [];
+  for (const student of students) {
+    const allRows = await getResultRowsForStudent(student.id);
+    const resultRows = allRows.filter((r) => bookIds.has(r.subjectId));
+    if (resultRows.length === 0) continue;
+    const { total, average } = buildResultRow(resultRows);
+    qualifying.push({ studentId: student.id, total, average });
+  }
+
+  const ranked = assignRanks(qualifying, 'average');
+  return new Map(ranked.map((r) => [r.studentId, r.rank]));
+}
+
 // Builds a student's results grouped into one section per stage they're
 // currently registered for — stages are never combined into a single
 // total. Any result whose book isn't part of any of the student's current
@@ -52,18 +86,22 @@ async function buildStudentStageSheet(student) {
   const bookSets = await Promise.all(stages.map((stage) => getStageBookIds(stage.id)));
   const claimedSubjectIds = new Set();
 
-  const stageSections = stages.map((stage, i) => {
+  const stageSections = await Promise.all(stages.map(async (stage, i) => {
     const bookIds = bookSets[i];
     const rowsForStage = resultRows.filter((r) => bookIds.has(r.subjectId));
     rowsForStage.forEach((r) => claimedSubjectIds.add(r.subjectId));
     const row = buildResultRow(rowsForStage);
+    // Only worth ranking a stage this student actually has marks in —
+    // otherwise they wouldn't qualify for that stage's ranking anyway.
+    const rank = rowsForStage.length > 0 ? (await computeStageRankMap(stage.id)).get(student.id) ?? null : null;
     return {
       classId: stage.id,
       stageName: stage.name_ar,
       subjects: rowsForStage.map((r) => ({ subjectId: r.subjectId, subjectName: r.subjectName, marks: r.marks })),
       ...row,
+      rank,
     };
-  });
+  }));
 
   const otherRows = resultRows.filter((r) => !claimedSubjectIds.has(r.subjectId));
   const otherResults = otherRows.length
@@ -183,6 +221,11 @@ const getByClass = asyncHandler(async (req, res) => {
   }
 
   const bookIds = await getStageBookIds(classId);
+  // Computed across the *whole* Stage (every masjid), not just the masjid
+  // this view happens to be filtered to — Masjid is never a ranking
+  // boundary, so a coordinator viewing only their own masjid's table still
+  // sees each student's true Stage-wide rank.
+  const rankMap = await computeStageRankMap(classId);
 
   const students = await Student.findAll({
     where: { buildingId },
@@ -209,6 +252,7 @@ const getByClass = asyncHandler(async (req, res) => {
         studentId: student.id,
         studentName: student.name,
         ...row,
+        rank: rankMap.get(student.id) ?? null,
       };
     })
   );
@@ -255,6 +299,15 @@ const getAll = asyncHandler(async (req, res) => {
   });
 
   const subjectMap = new Map();
+  // Keyed by classId, computed once per Stage no matter how many students
+  // in the result set share it — same cross-masjid rank map used by
+  // getByClass, just cached here since this endpoint can span many stages.
+  const rankMapCache = new Map();
+  const getRankMap = (classId) => {
+    if (!rankMapCache.has(classId)) rankMapCache.set(classId, computeStageRankMap(classId));
+    return rankMapCache.get(classId);
+  };
+
   const rowsPerStudent = await Promise.all(
     students.map(async (student) => {
       const allRows = await getResultRowsForStudent(student.id);
@@ -266,6 +319,7 @@ const getAll = asyncHandler(async (req, res) => {
             if (!subjectMap.has(row.subjectId)) subjectMap.set(row.subjectId, row.subjectName);
           });
           const row = buildResultRow(resultRows);
+          const rankMap = await getRankMap(stage.id);
           return {
             studentId: student.id,
             studentName: student.name,
@@ -273,6 +327,7 @@ const getAll = asyncHandler(async (req, res) => {
             buildingName: student.Building?.name,
             stageName: stage.name_ar,
             ...row,
+            rank: rankMap.get(student.id) ?? null,
           };
         }),
       );

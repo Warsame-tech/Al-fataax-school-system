@@ -89,6 +89,7 @@ export default function ResultsAllReportPage() {
         { label: 'Total', value: row.total },
         { label: 'Average', value: row.average },
         { label: 'Grade', value: row.grade },
+        { label: 'Rank', value: row.rank != null ? `#${row.rank}` : null },
       ],
     })),
   });

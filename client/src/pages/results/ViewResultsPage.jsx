@@ -316,6 +316,9 @@ export default function ViewResultsPage() {
                     Grade: <Badge color={gradeToColor(activeStage.grade)}>{activeStage.grade}</Badge>
                   </span>
                 )}
+                <span className="text-gray-600 dark:text-gray-300">
+                  Rank: <span className="font-semibold text-gray-900 dark:text-gray-100">{activeStage?.rank != null ? `#${activeStage.rank}` : '—'}</span>
+                </span>
               </div>
             </div>
           </div>

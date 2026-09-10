@@ -69,10 +69,11 @@ export default function ResultsByStageReportPage() {
           { key: 'total', label: 'Total' },
           { key: 'average', label: 'Average' },
           { key: 'grade', label: 'Grade' },
+          { key: 'rank', label: 'Rank' },
         ],
         rows: rows.map((r) => {
           const marksBySubject = Object.fromEntries((r.subjects || []).map((s) => [s.subjectId, s.marks]));
-          const row = { studentId: r.studentId, studentName: r.studentName, total: r.total, average: r.average, grade: r.grade };
+          const row = { studentId: r.studentId, studentName: r.studentName, total: r.total, average: r.average, grade: r.grade, rank: r.rank != null ? `#${r.rank}` : '—' };
           subjectColumns.forEach((sc) => {
             row[`subject_${sc.id}`] = marksBySubject[sc.id];
           });

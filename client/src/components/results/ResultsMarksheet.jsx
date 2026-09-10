@@ -53,6 +53,7 @@ export function MultiStudentMarksheet({ rows, subjectColumns = [], title = 'Resu
               <th className="whitespace-nowrap px-4 py-3 font-semibold text-brand-red dark:text-red-400">Total</th>
               <th className="whitespace-nowrap px-4 py-3 font-semibold text-brand-red dark:text-red-400">Average</th>
               <th className="whitespace-nowrap px-4 py-3 font-semibold text-brand-red dark:text-red-400">Grade</th>
+              <th className="whitespace-nowrap px-4 py-3 font-semibold text-brand-red dark:text-red-400">Rank</th>
             </tr>
           </thead>
           <tbody>
@@ -90,6 +91,7 @@ export function MultiStudentMarksheet({ rows, subjectColumns = [], title = 'Resu
                   <td className="whitespace-nowrap px-4 py-3">
                     {row.grade ? <Badge color={gradeToColor(row.grade)}>{row.grade}</Badge> : '—'}
                   </td>
+                  <td className="whitespace-nowrap px-4 py-3 font-semibold text-gray-900 dark:text-gray-100">{row.rank != null ? `#${row.rank}` : '—'}</td>
                 </tr>
               );
             })}
@@ -150,6 +152,9 @@ function StageResultBlock({ stage }) {
                 Result: <Badge color={gradeToColor(stage.grade)}>{stage.grade}</Badge>
               </span>
             )}
+            <span className="text-gray-600 dark:text-gray-300">
+              Rank: <span className="font-semibold text-gray-900 dark:text-gray-100">{stage.rank != null ? `#${stage.rank}` : '—'}</span>
+            </span>
           </div>
         </>
       )}
@@ -329,6 +334,9 @@ export function SingleStudentMarksheet({ result, title = 'Results Marksheet', em
                   Grade: <Badge color={gradeToColor(result.grade)}>{result.grade}</Badge>
                 </span>
               )}
+              <span className="text-gray-600 dark:text-gray-300">
+                Rank: <span className="font-semibold text-gray-900 dark:text-gray-100">{result.rank != null ? `#${result.rank}` : '—'}</span>
+              </span>
             </div>
           </>
         )}
