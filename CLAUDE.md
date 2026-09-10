@@ -183,7 +183,7 @@ All routes are mounted under `/api` in `server/src/app.js`. `authenticate` = val
 | Students | `/api/students` | Reads: admin/coordinator/gudoomiye; writes: admin/coordinator (coordinator forced to own masjid); `/:id/stages` sub-resource (add/remove stage registrations) admin/coordinator only; `/:id/rename` admin/coordinator |
 | Coordinators (GUDOOMIYE KUXIGEEN directory) | `/api/coordinators` | Admin-only, full CRUD |
 | Users (login accounts) | `/api/users` | Admin-only, full CRUD, writes rate-limited (`accountWriteLimiter`) |
-| Results | `/api/results` | `GET /by-class` admin/coordinator (masjid-scoped); `GET /all` admin/coordinator (masjid-scoped for coordinator); `GET /search` admin/coordinator (masjid-scoped); `GET /student/:studentId` admin/student (self-scoped for student, gated by `resultsVisible`); writes admin-only |
+| Results | `/api/results` | `GET /by-class` admin/coordinator (masjid-scoped); `GET /all` admin/coordinator (masjid-scoped for coordinator); `GET /leaderboard` admin/coordinator (top-N per Stage, coordinator scoped to own masjid's students but with their true cross-masjid rank); `GET /search` admin/coordinator (masjid-scoped); `GET /student/:studentId` admin/student (self-scoped for student, gated by `resultsVisible`); writes admin-only |
 | Dashboard | `/api/dashboard` | `GET /summary` admin/gudoomiye |
 | Reports | `/api/reports` | `GET /students` admin/gudoomiye (aggregate); `GET /all-students` admin/coordinator (flat list, masjid-scoped for coordinator); `GET /by-building` admin; `GET /my-building` coordinator-only |
 | GUDOOMIYE reports | `/api/gudoomiye/reports` | All admin/gudoomiye only: `GET /masjid-students`, `GET /new-students` (pending queue), `GET /summary`, `PATCH /students/:id/accept` |
@@ -196,6 +196,7 @@ Defined in `client/src/App.jsx`. `/login` and `/forgot-password` are public; eve
 - `/registrations/{buildings,fans,subjects,classes,students,coordinators,users}` — CRUD pages (masjid/fan/book/stage/user admin-only; students shared admin+coordinator, coordinator locked to own masjid with a disabled, pre-filled Masjid field)
 - `/results/register` — admin-only bulk marks entry for one student's one stage at a time
 - `/results/view` — shared by admin (browse by masjid+stage / all-students / search-by-ID modes), coordinator (search-by-ID only, own masjid), student (own results, stage picker if multi-stage)
+- `/results/top3`, `/results/top10` — admin/coordinator only, `TopStudentsPage` (same component, different `limit` prop): top-N leaderboard per Stage, cross-masjid for admin, own-masjid-only for coordinator
 - `/reports` and `/reports/*` — admin's report hub (tile grid) and individual reports; coordinator sees a masjid-locked "my masjid" panel plus the two masjid-scoped reports (no Summary Report for this role — that's gudoomiye-only)
 - `/gudoomiye` and `/gudoomiye/*` — GUDOOMIYE's own hub: Masjid Students, New Registered Students (approval queue with Accept buttons), All Madrasa Students, Summary Report, Overall Statistics
 
