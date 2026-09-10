@@ -19,6 +19,7 @@ const resultRoutes = require('./routes/resultRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const gudoomiyeReportRoutes = require('./routes/gudoomiyeReportRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api/results', resultRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/gudoomiye/reports', gudoomiyeReportRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Serves the built React app from the same origin as the API when
 // client/dist exists (production deploys) — keeps the session cookie

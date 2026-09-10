@@ -9,6 +9,7 @@ const User = require('./User');
 const Result = require('./Result');
 const StudentStage = require('./StudentStage');
 const PasswordResetOtp = require('./PasswordResetOtp');
+const SystemSetting = require('./SystemSetting');
 
 // Building <-> Student
 Building.hasMany(Student, { foreignKey: 'buildingId', onDelete: 'RESTRICT' });
@@ -77,4 +78,5 @@ module.exports = {
   Result,
   StudentStage,
   PasswordResetOtp,
+  SystemSetting,
 };

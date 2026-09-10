@@ -40,11 +40,7 @@ const update = asyncHandler(async (req, res) => {
   if (!building) {
     return res.status(404).json({ success: false, message: 'Not found' });
   }
-  const payload = { name: req.body.name };
-  if (req.body.resultsVisible !== undefined) {
-    payload.resultsVisible = req.body.resultsVisible;
-  }
-  await building.update(payload);
+  await building.update({ name: req.body.name });
   return res.json({ success: true, data: building });
 });
 

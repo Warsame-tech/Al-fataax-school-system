@@ -1,10 +1,69 @@
+import { useEffect, useState, useCallback } from 'react';
+import toast from 'react-hot-toast';
 import useTheme from '../../hooks/useTheme';
 import useAuth from '../../hooks/useAuth';
+import settingsApi from '../../api/settingsApi';
 import { USER_TYPE_LABELS } from '../../utils/constants';
+import ToggleSwitch from '../common/ToggleSwitch';
+
+// The one global Results Visibility control in the entire system — admin
+// only. OFF blocks every non-admin role from every results endpoint
+// (enforced server-side in enforceResultsVisibility.js, not just hidden
+// here); there is no per-masjid/per-stage/per-role variant anymore.
+function ResultsVisibilityToggle() {
+  const [visible, setVisible] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const fetchState = useCallback(async () => {
+    try {
+      const data = await settingsApi.getResultsVisibility();
+      setVisible(data.resultsVisible);
+    } catch {
+      // Leave the last-known state on a transient failure rather than
+      // flashing a wrong value.
+    } finally {
+      setLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchState();
+  }, [fetchState]);
+
+  const handleToggle = async (next) => {
+    setSaving(true);
+    try {
+      const resultsVisible = await settingsApi.updateResultsVisibility(next);
+      setVisible(resultsVisible);
+      toast.success(
+        resultsVisible
+          ? 'Results turned ON. Users can now view results according to their permissions.'
+          : 'Results turned OFF. Only the admin can view results until this is turned back on.',
+      );
+    } catch (err) {
+      toast.error(err.message || 'Failed to update results visibility.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!loaded) return null;
+
+  return (
+    <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 dark:border-gray-600">
+      <ToggleSwitch checked={visible} disabled={saving} label="Global Results Visibility" onChange={handleToggle} />
+      <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+        Results: <span className={visible ? 'text-brand-green dark:text-green-400' : 'text-status-error dark:text-red-400'}>{visible ? 'ON' : 'OFF'}</span>
+      </span>
+    </div>
+  );
+}
 
 export default function Topbar({ onMenuClick, title }) {
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
+  const isAdmin = user?.userType === 'admin';
 
   return (
     <header className="no-print sticky top-0 z-30 flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-700 dark:bg-gray-800 md:justify-end md:border-b-0 md:bg-transparent md:px-6 md:py-3 md:shadow-none dark:md:bg-transparent">
@@ -22,6 +81,7 @@ export default function Topbar({ onMenuClick, title }) {
 
       <div className="flex flex-col items-end gap-1">
         <div className="flex items-center gap-2">
+          {isAdmin && <ResultsVisibilityToggle />}
           <button
             type="button"
             onClick={toggleTheme}

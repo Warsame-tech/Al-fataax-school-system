@@ -5,11 +5,17 @@ const authenticate = require('../middleware/authenticate');
 const authorizeRoles = require('../middleware/authorizeRoles');
 const scopeToOwnBuilding = require('../middleware/scopeToOwnBuilding');
 const scopeStudentToSelf = require('../middleware/scopeStudentToSelf');
+const enforceResultsVisibility = require('../middleware/enforceResultsVisibility');
 const validate = require('../middleware/validate');
 
 const router = express.Router();
 
 router.use(authenticate);
+// Single global gate for every route below: blocks every non-admin role
+// outright while Results Visibility is OFF (see systemSettings.js). Write
+// routes below are admin-only anyway, so this only ever actually blocks
+// the read routes for non-admin roles.
+router.use(enforceResultsVisibility);
 
 router.get(
   '/by-class',

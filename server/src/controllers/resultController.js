@@ -392,7 +392,7 @@ const getLeaderboard = asyncHandler(async (req, res) => {
 const getForStudent = asyncHandler(async (req, res) => {
   const student = await Student.findByPk(req.params.studentId, {
     include: [
-      { model: Building, attributes: ['id', 'name', 'resultsVisible'] },
+      { model: Building, attributes: ['id', 'name'] },
       studentStagesInclude,
     ],
   });
@@ -400,17 +400,9 @@ const getForStudent = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Student not found' });
   }
 
-  // Only the student's own self-view is gated by their masjid's toggle —
-  // admin/coordinator reach this same endpoint too (e.g. from the
-  // Results Registration and Student Report pages) and must keep working
-  // regardless of the toggle.
-  if (req.user.userType === 'student' && student.Building?.resultsVisible === false) {
-    return res.status(403).json({
-      success: false,
-      message: 'Results are not currently available for your masjid. Please contact your masjid administrator.',
-    });
-  }
-
+  // Visibility is enforced globally, one gate for every route (see
+  // resultRoutes.js's enforceResultsVisibility) — nothing masjid-specific
+  // to check here anymore.
   const sheet = await buildStudentStageSheet(student);
   return res.json({ success: true, data: sheet });
 });
