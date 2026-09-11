@@ -6,7 +6,7 @@ export function gradeToColor(grade) {
   const g = String(grade).toUpperCase();
   if (g.startsWith('A')) return 'green';
   if (g.startsWith('B') || g.startsWith('C')) return 'gold';
-  return 'red'; // D+, D, D-, F, or anything else
+  return 'red'; // D (the fail grade — there is no separate F) or anything else
 }
 
 // A single subject's marks below this are flagged red everywhere marks are
