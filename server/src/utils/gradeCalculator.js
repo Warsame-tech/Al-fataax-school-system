@@ -7,13 +7,14 @@ function computeAverage(total, subjectCount) {
   return Math.round((total / subjectCount) * 100) / 100;
 }
 
-// 10-tier letter grade: nine 5-point passing bands from 56-100 (A+ down to
-// C-), then a single "D" for everything below 56 — D *is* the fail grade
-// here, there is no separate F. Note this pass/fail line (56) is
-// intentionally different from FAILING_MARKS_THRESHOLD (50) in
-// client/src/utils/gradeUtils.js, which is a separate, unrelated rule for
-// coloring an individual subject's marks red — this is the overall
-// stage grade instead.
+// 11-tier letter grade: ten passing bands from 50-100 (A+ down to D+,
+// 5-point each except D+'s 6-point band absorbing the remainder down to
+// 50), then a single "D" for everything below 50 — D *is* the fail grade
+// here, there is no separate F. This pass/fail line (50) matches
+// FAILING_MARKS_THRESHOLD in client/src/utils/gradeUtils.js (a separate,
+// unrelated rule for coloring an individual subject's marks red) purely
+// by coincidence of the current thresholds — that constant governs
+// per-subject marks, this one the overall stage grade.
 function computeGrade(average) {
   if (average >= 96) return 'A+';
   if (average >= 91) return 'A';
@@ -24,6 +25,7 @@ function computeGrade(average) {
   if (average >= 66) return 'C+';
   if (average >= 61) return 'C';
   if (average >= 56) return 'C-';
+  if (average >= 50) return 'D+';
   return 'D';
 }
 

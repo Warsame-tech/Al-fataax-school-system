@@ -5,7 +5,9 @@ export function gradeToColor(grade) {
   if (!grade) return 'neutral';
   const g = String(grade).toUpperCase();
   if (g.startsWith('A')) return 'green';
-  if (g.startsWith('B') || g.startsWith('C')) return 'gold';
+  // D+ passes (see gradeCalculator.js) — only plain "D" is the fail grade,
+  // so D+ groups with the other passing-but-not-great colors, not red.
+  if (g.startsWith('B') || g.startsWith('C') || g === 'D+') return 'gold';
   return 'red'; // D (the fail grade — there is no separate F) or anything else
 }
 
