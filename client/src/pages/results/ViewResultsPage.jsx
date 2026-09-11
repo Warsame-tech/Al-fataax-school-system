@@ -99,6 +99,12 @@ export default function ViewResultsPage() {
   const isStudent = user?.userType === 'student';
   const isCoordinator = user?.userType === 'coordinator';
   const isAdmin = user?.userType === 'admin';
+  // Chairman (GUDOOMIYE): same general, system-wide result-viewing format
+  // as admin (browse by masjid+stage / all-students / search-by-ID) —
+  // falls through to the same UI branch as admin below, just without any
+  // of admin's write/registration access.
+  const isGudoomiye = user?.userType === 'gudoomiye';
+  const isAdminLike = isAdmin || isGudoomiye;
 
   // Student flow (unchanged)
   const [studentResult, setStudentResult] = useState(null);
@@ -154,12 +160,12 @@ export default function ViewResultsPage() {
 
   useDataSync(['results'], fetchStudentResult);
 
-  // Admin: load masjids list up front for the browse and all-students modes.
+  // Admin/gudoomiye: load masjids list up front for the browse and all-students modes.
   const fetchAdminFilters = useCallback(() => {
-    if (!isAdmin) return;
+    if (!isAdminLike) return;
     buildingsApi.list().then((data) => setBuildings(data || [])).catch(() => setBuildings([]));
     classesApi.list().then((data) => setClasses(data || [])).catch(() => setClasses([]));
-  }, [isAdmin]);
+  }, [isAdminLike]);
 
   useEffect(() => {
     fetchAdminFilters();
@@ -169,7 +175,7 @@ export default function ViewResultsPage() {
 
   // Browse mode: load educational stages once the masjid is known.
   useEffect(() => {
-    if (!isAdmin || mode !== 'browse' || !buildingId) return;
+    if (!isAdminLike || mode !== 'browse' || !buildingId) return;
     setClassesLoading(true);
     setClassId('');
     classesApi
@@ -177,7 +183,7 @@ export default function ViewResultsPage() {
       .then((data) => setClasses(data || []))
       .catch(() => setClasses([]))
       .finally(() => setClassesLoading(false));
-  }, [isAdmin, mode, buildingId]);
+  }, [isAdminLike, mode, buildingId]);
 
   const fetchClassResults = useCallback(async () => {
     if (!buildingId || !classId) return;

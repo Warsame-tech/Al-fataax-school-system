@@ -4,9 +4,9 @@
 export function gradeToColor(grade) {
   if (!grade) return 'neutral';
   const g = String(grade).toUpperCase();
-  if (g === 'A+' || g === 'A') return 'green';
-  if (g === 'B' || g === 'C') return 'gold';
-  return 'red'; // D, F, or anything else
+  if (g.startsWith('A')) return 'green';
+  if (g.startsWith('B') || g.startsWith('C')) return 'gold';
+  return 'red'; // D+, D, D-, F, or anything else
 }
 
 // A single subject's marks below this are flagged red everywhere marks are

@@ -133,7 +133,7 @@ export default function App() {
         <Route
           path="/results/view"
           element={
-            <ProtectedRoute allowedRoles={['admin', 'student', 'coordinator']}>
+            <ProtectedRoute allowedRoles={['admin', 'student', 'coordinator', 'gudoomiye']}>
               <ViewResultsPage />
             </ProtectedRoute>
           }

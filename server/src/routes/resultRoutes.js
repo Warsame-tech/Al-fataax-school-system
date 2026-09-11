@@ -19,16 +19,16 @@ router.use(enforceResultsVisibility);
 
 router.get(
   '/by-class',
-  authorizeRoles('admin', 'coordinator'),
+  authorizeRoles('admin', 'coordinator', 'gudoomiye'),
   scopeToOwnBuilding,
   resultController.getByClass
 );
 
-router.get('/all', authorizeRoles('admin', 'coordinator'), resultController.getAll);
+router.get('/all', authorizeRoles('admin', 'coordinator', 'gudoomiye'), resultController.getAll);
 
 router.get('/leaderboard', authorizeRoles('admin', 'coordinator'), resultController.getLeaderboard);
 
-router.get('/search', authorizeRoles('admin', 'coordinator'), resultController.search);
+router.get('/search', authorizeRoles('admin', 'coordinator', 'gudoomiye'), resultController.search);
 
 router.get(
   '/student/:studentId',

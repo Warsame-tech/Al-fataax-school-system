@@ -255,7 +255,15 @@ export default function Sidebar({ onNavigate }) {
         )}
 
         {isGudoomiye && (
-          <SidebarGroup icon={NAV_ICONS.reports} label="GUDOOMIYE" hasActiveChild={inGudoomiye} defaultExpanded={inGudoomiye}>
+          <SidebarGroup
+            icon={NAV_ICONS.reports}
+            label="GUDOOMIYE"
+            hasActiveChild={inGudoomiye || inResults}
+            defaultExpanded={inGudoomiye || inResults}
+          >
+            <NavItem to="/results/view" icon={NAV_ICONS.viewResults} onNavigate={onNavigate} indented>
+              View Results
+            </NavItem>
             <NavItem to="/gudoomiye/masjid-students" icon={NAV_ICONS.building} onNavigate={onNavigate} indented>
               Masjid Students
             </NavItem>

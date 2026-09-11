@@ -1,7 +1,7 @@
 const { QueryTypes, Op } = require('sequelize');
 const { sequelize, Result, Student, Subject, Building, Class } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
-const { buildResultRow, assignRanks } = require('../utils/gradeCalculator');
+const { buildResultRow, assignRanks, takeTopWithTies } = require('../utils/gradeCalculator');
 const { ownBuildingId } = require('../utils/scoping');
 
 const studentStagesInclude = { model: Class, as: 'Stages', attributes: ['id', 'name_ar'], through: { attributes: [] } };
@@ -363,7 +363,10 @@ const getAll = asyncHandler(async (req, res) => {
 // results view for this role) — each still carries their true Stage-wide
 // rank, not a rank relative to just their own masjid. Admin sees every
 // masjid's top performers per Stage. Stages with no qualifying students
-// yet are omitted rather than shown empty.
+// yet are omitted rather than shown empty. A tie at the cutoff (e.g. two
+// students sharing 3rd place in a Top 3) is never split — every student
+// sharing that rank is included, even if the list ends up longer than
+// `limit` (see takeTopWithTies).
 const getLeaderboard = asyncHandler(async (req, res) => {
   const limit = Math.min(Math.max(Number(req.query.limit) || 10, 1), 100);
   const forcedBuildingId = ownBuildingId(req.user);
@@ -380,7 +383,7 @@ const getLeaderboard = asyncHandler(async (req, res) => {
         return {
           stageId: stage.id,
           stageName: stage.name_ar,
-          students: leaderboard.slice(0, limit),
+          students: takeTopWithTies(leaderboard, limit),
         };
       }),
     )

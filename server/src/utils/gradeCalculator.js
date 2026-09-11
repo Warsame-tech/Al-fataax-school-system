@@ -7,12 +7,24 @@ function computeAverage(total, subjectCount) {
   return Math.round((total / subjectCount) * 100) / 100;
 }
 
+// 13-tier letter grade. The pass/fail line stays at 50 (unchanged —
+// matches FAILING_MARKS_THRESHOLD in client/src/utils/gradeUtils.js and
+// the old lowest-passing-grade cutoff), with the 50-100 passing range
+// split into 4-point bands per letter family (A/B/C/D), each divided into
+// +/plain/-; the top band (A+) absorbs the remainder up to 100.
 function computeGrade(average) {
-  if (average >= 90) return 'A+';
-  if (average >= 80) return 'A';
-  if (average >= 70) return 'B';
-  if (average >= 60) return 'C';
-  if (average >= 50) return 'D';
+  if (average >= 94) return 'A+';
+  if (average >= 90) return 'A';
+  if (average >= 86) return 'A-';
+  if (average >= 82) return 'B+';
+  if (average >= 78) return 'B';
+  if (average >= 74) return 'B-';
+  if (average >= 70) return 'C+';
+  if (average >= 66) return 'C';
+  if (average >= 62) return 'C-';
+  if (average >= 58) return 'D+';
+  if (average >= 54) return 'D';
+  if (average >= 50) return 'D-';
   return 'F';
 }
 
@@ -52,4 +64,16 @@ function assignRanks(items, scoreKey = 'average') {
   });
 }
 
-module.exports = { computeTotal, computeAverage, computeGrade, buildResultRow, assignRanks };
+// Top-N selection that never splits a tie: if the score at the cutoff
+// position is shared by students beyond position `limit`, all of them are
+// included too, so a Top 3/Top 10 list can never silently drop a student
+// who tied with whoever landed in last place. `ranked` must already be
+// sorted ascending by rank (assignRanks + a rank sort, as
+// computeStageLeaderboard produces).
+function takeTopWithTies(ranked, limit) {
+  if (ranked.length <= limit) return ranked;
+  const cutoffRank = ranked[limit - 1].rank;
+  return ranked.filter((r) => r.rank <= cutoffRank);
+}
+
+module.exports = { computeTotal, computeAverage, computeGrade, buildResultRow, assignRanks, takeTopWithTies };
