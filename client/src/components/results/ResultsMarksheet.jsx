@@ -6,13 +6,13 @@ import { gradeToColor, marksTextClass } from '../../utils/gradeUtils';
 
 // Shared "official document" banner + title-bar treatment used by every
 // marksheet-style result display (View Results and Reports alike): the
-// full-width banner image, a bold brand-red title bar flush against it, and
+// full-width banner image, a bold brand-green title bar flush against it, and
 // the table flush against that.
 export function MarksheetDocument({ title = 'Results Marksheet', children }) {
   return (
     <div className="w-full">
       <img src={logoBanner} alt="Al Fataax" className="block w-full" />
-      <div className="bg-brand-red py-2.5 text-center text-lg font-bold tracking-wide text-white dark:bg-brand-red-dark">
+      <div className="bg-brand-green py-2.5 text-center text-lg font-bold tracking-wide text-white dark:bg-brand-green-dark">
         {title}
       </div>
       <div className="report-table-wrap scroll-thin w-full overflow-x-auto rounded-b-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">

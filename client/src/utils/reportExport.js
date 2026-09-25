@@ -38,7 +38,8 @@ import ExcelJS from 'exceljs';
 import logoBannerUrl from '../assets/logo-banner.png';
 
 const BRAND_RED = '#9E1B32';
-const BRAND_RED_ARGB = 'FF9E1B32';
+const BRAND_GREEN = '#1E5B3A';
+const BRAND_GREEN_ARGB = 'FF1E5B3A';
 const TEXT_DARK = '#111827';
 const LINE_GRAY = '#d1d5db';
 
@@ -161,7 +162,7 @@ export async function exportReportToPdf(report, filename) {
   };
 
   // Mirrors MarksheetDocument on screen exactly: the full-width banner
-  // image, then a solid brand-red bar with the report title centered in
+  // image, then a solid brand-green bar with the report title centered in
   // white — only on the first page, same as the single on-screen instance.
   const banner = await loadBannerImage().catch(() => null);
   if (banner) {
@@ -171,7 +172,7 @@ export async function exportReportToPdf(report, filename) {
   }
 
   const titleBarHeight = 10;
-  doc.setFillColor(BRAND_RED);
+  doc.setFillColor(BRAND_GREEN);
   doc.rect(0, y, pageWidth, titleBarHeight, 'F');
   drawText(doc, report.title, pageWidth / 2, y + titleBarHeight / 2 + 1.5, {
     fontSize: 13,
@@ -268,7 +269,7 @@ export async function exportReportToExcel(report, filename) {
   const lastColLetter = sheet.getColumn(maxCols).letter;
 
   // Mirrors MarksheetDocument on screen: the same banner image, then a
-  // solid brand-red bar with the report title centered in white.
+  // solid brand-green bar with the report title centered in white.
   const banner = await loadBannerImage().catch(() => null);
   if (banner) {
     const targetWidthPx = 760;
@@ -283,7 +284,7 @@ export async function exportReportToExcel(report, filename) {
   sheet.mergeCells(`A${titleRow.number}:${lastColLetter}${titleRow.number}`);
   titleRow.height = 22;
   titleRow.getCell(1).font = { bold: true, size: 13, color: { argb: 'FFFFFFFF' } };
-  titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_RED_ARGB } };
+  titleRow.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: BRAND_GREEN_ARGB } };
   titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
   sheet.addRow([]);
 
